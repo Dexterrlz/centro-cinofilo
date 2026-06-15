@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Pagina non trovata — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div style="min-height:70dvh;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+  <div style="max-width:420px;">
+    <div style="font-size:4rem;margin-bottom:1rem;line-height:1;">🐾</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:5rem;color:var(--color-cipria);font-weight:600;line-height:1;margin-bottom:0.5rem;">
+      404
+    </h1>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--color-choco);margin-bottom:0.75rem;font-weight:600;">
+      Pagina non trovata
+    </h2>
+    <p style="color:var(--color-muted);font-size:14px;margin-bottom:2rem;">
+      La pagina che cerchi non esiste o è stata rimossa. Forse il tuo cane l'ha mangiata! 🐕
+    </p>
+    <a href="/" class="btn-primary" style="display:inline-flex;">
+      Torna alla home
+    </a>
+  </div>
+</div>
+{% endblock %}

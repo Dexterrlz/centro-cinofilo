@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
+
+  <div style="margin-bottom:2rem;">
+    <a href="/" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-muted);text-decoration:none;margin-bottom:1.5rem;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      Torna alla home
+    </a>
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;color:var(--color-choco);font-weight:600;margin:0 0 0.25rem;">
+      Privacy Policy
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;">ASD Diamoci la Zampa · Ultimo aggiornamento: Giugno 2024</p>
+  </div>
+
+  <div class="card prose" style="padding:2rem;">
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>1. Titolare del trattamento</h2>
+      <p>
+        Il titolare del trattamento dei dati personali è <strong>ASD Diamoci la Zampa</strong>,
+        con sede in Via Cupa Travi, 80040 Cercola (NA).
+        Puoi contattarci all'indirizzo email
+        <a href="mailto:asdiamocilazampa@libero.it" style="color:var(--color-terracotta);">asdiamocilazampa@libero.it</a>
+        o al numero <a href="tel:+393333285654" style="color:var(--color-terracotta);">333 328 5654</a>.
+      </p>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>2. Dati raccolti</h2>
+      <p>Per la gestione delle prenotazioni e dell'account raccogliamo i seguenti dati:</p>
+      <ul>
+        <li>Nome e cognome</li>
+        <li>Indirizzo email</li>
+        <li>Nome del cane (facoltativo, fornito volontariamente)</li>
+        <li>Dati di accesso (password hashata con bcrypt oppure profilo Google OAuth)</li>
+        <li>Data e ora degli appuntamenti prenotati</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>3. Finalità del trattamento</h2>
+      <p>I dati sono trattati esclusivamente per:</p>
+      <ul>
+        <li>Creazione e gestione dell'account utente</li>
+        <li>Verifica dell'indirizzo email tramite link di attivazione</li>
+        <li>Gestione e conferma delle prenotazioni</li>
+        <li>Invio di comunicazioni relative all'appuntamento (conferma, cancellazione)</li>
+        <li>Autenticazione tramite Google OAuth (se scelto dall'utente)</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>4. Base giuridica</h2>
+      <p>
+        Il trattamento si basa sul consenso espresso dall'utente al momento della registrazione
+        (art. 6, par. 1, lett. a del GDPR) e sull'esecuzione di un contratto di servizio
+        (art. 6, par. 1, lett. b del GDPR).
+      </p>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>5. Conservazione dei dati</h2>
+      <p>
+        I dati relativi all'account vengono conservati fino alla richiesta di cancellazione da parte dell'utente.
+        I dati relativi alle prenotazioni sono conservati per un massimo di 12 mesi dalla data dell'appuntamento,
+        salvo obblighi di legge.
+      </p>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>6. Diritti dell'interessato</h2>
+      <p>
+        Hai il diritto di accedere, rettificare, cancellare o limitare il trattamento dei tuoi dati personali.
+        Hai inoltre il diritto alla portabilità dei dati e di revocare il consenso in qualsiasi momento.
+        Per esercitare i tuoi diritti contattaci via email a
+        <a href="mailto:asdiamocilazampa@libero.it" style="color:var(--color-terracotta);">asdiamocilazampa@libero.it</a>.
+      </p>
+    </section>
+
+    <section style="margin-bottom:1.75rem;">
+      <h2>7. Cookie</h2>
+      <p>
+        Questo sito utilizza esclusivamente cookie tecnici essenziali per il funzionamento del servizio:
+        un cookie di sessione (httpOnly, firmato con chiave segreta) necessario per il mantenimento
+        della sessione di accesso e la protezione CSRF. Non vengono utilizzati cookie di profilazione,
+        analisi o marketing di terze parti.
+      </p>
+    </section>
+
+    <section>
+      <h2>8. Sicurezza</h2>
+      <p>
+        Le password vengono archiviate in forma hashata con algoritmo bcrypt e non sono mai leggibili
+        in chiaro. Le comunicazioni avvengono tramite connessioni cifrate HTTPS. Il token di sessione
+        è firmato con chiave segreta e non contiene dati sensibili.
+      </p>
+    </section>
+
+  </div>
+
+</div>
+{% endblock %}

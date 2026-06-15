@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Prenota — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+
+{# ── Hero ──────────────────────────────────────────────────── #}
+<section class="hero-section" style="padding-top:3.5rem;padding-bottom:2.5rem;">
+  <p style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-terracotta);margin-bottom:1rem;">
+    Centro Cinofilo · Cercola (NA)
+  </p>
+  <h1 class="hero-title">
+    Il campo dove il tuo cane<br>
+    si diverte, impara e sta bene.
+  </h1>
+  <p class="hero-subtitle">
+    Scegli la disciplina e prenota la tua lezione in pochi semplici passi. Ti aspettiamo a Cercola!
+  </p>
+  <a href="#discipline" class="btn-primary" style="font-size:16px;padding:16px 36px;">
+    📅 Prenota ora
+  </a>
+</section>
+
+{# Decorazione SVG zampe tra hero e sezione discipline #}
+<div style="text-align:center;font-size:1.5rem;opacity:0.25;margin:-0.5rem 0 1rem;letter-spacing:1.5rem;">
+  🐾🐾🐾
+</div>
+
+{# ── Discipline ────────────────────────────────────────────── #}
+<section id="discipline" class="section" style="background:var(--color-white);">
+  <div class="page-wrapper-wide">
+    <h2 class="section-title">Scegli la disciplina</h2>
+    <p class="section-subtitle">Ogni percorso è pensato per il benessere e la felicità del tuo cane.</p>
+
+    {% set disc_meta = {
+      'Agility':        ('🏃', 'Percorsi, ostacoli e tanto divertimento insieme.'),
+      'Dog Training 1': ('🦴', 'Educazione di base per ogni esigenza.'),
+      'Dog Training 2': ('🎯', 'Obbedienza avanzata e controllo.'),
+      'Dog Training 3': ('🎀', 'Lavoro mirato su comportamenti specifici.')
+    } %}
+
+    {% if disciplines %}
+    <div class="grid grid-cols-2 gap-4 sm:gap-5" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+      {% for d in disciplines %}
+      {% set meta = disc_meta.get(d.name, ('⭐', d.description or 'Slot da 30 minuti.')) %}
+      <a href="/prenota/{{ d.id }}" class="card-discipline">
+        <span class="disc-icon">{{ meta[0] }}</span>
+        <h3>{{ d.name }}</h3>
+        <p>{{ meta[1] }}</p>
+        <span class="btn-primary" style="font-size:14px;padding:10px 22px;">Prenota</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:3rem;text-align:center;">
+      <p style="color:var(--color-muted);font-size:15px;">Nessuna disciplina disponibile al momento. Torna presto!</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ── Valori ────────────────────────────────────────────────── #}
+<section class="section" style="background:var(--color-cream);">
+  <div class="page-wrapper-wide">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="value-card">
+        <span class="value-icon">🌿</span>
+        <p class="value-title">Ambiente sicuro e accogliente</p>
+        <p class="value-desc">Uno spazio immerso nella natura pensato per il benessere dei cani e dei loro umani.</p>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">❤️</span>
+        <p class="value-title">Istruttori qualificati e appassionati</p>
+        <p class="value-desc">Esperti al fianco tuo e del tuo cane in ogni passo del percorso formativo.</p>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">⭐</span>
+        <p class="value-title">Rispetto e divertimento per tutti</p>
+        <p class="value-desc">Percorsi su misura per ogni cane, con empatia e professionalità in ogni lezione.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── Contatti ──────────────────────────────────────────────── #}
+<section class="section section-dark" style="text-align:center;">
+  <h2 class="section-title" style="font-style:italic;">Hai domande?</h2>
+  <p class="section-subtitle">Siamo qui per te! Contattaci e ti risponderemo al più presto.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
+    <a href="mailto:asdiamocilazampa@libero.it" class="btn-primary">✉️ Scrivici una email</a>
+    <a href="https://wa.me/393333285654" target="_blank" rel="noopener" class="btn-secondary">💬 WhatsApp</a>
+  </div>
+  <p style="font-size:13px;color:var(--color-muted);margin-top:1.25rem;">
+    📞 333 328 5654 · Angelo Russo · Via Cupa Travi, 80040 Cercola (NA)
+  </p>
+</section>
+
+{% endblock %}

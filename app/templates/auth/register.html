@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Registrati — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div style="min-height:100dvh;display:flex;align-items:flex-start;justify-content:center;padding:2.5rem 1rem;">
+  <div style="width:100%;max-width:480px;">
+
+    <div style="text-align:center;margin-bottom:1.75rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.85rem;color:var(--color-choco);margin-bottom:0.35rem;font-weight:600;">
+        Crea il tuo account
+      </h1>
+      <p style="color:var(--color-muted);font-size:14px;">
+        Prenota le lezioni per te e il tuo cane
+      </p>
+    </div>
+
+    <div class="auth-card">
+
+      {% if errors %}
+      <div class="alert alert-error" style="margin-bottom:1.25rem;">
+        {% for e in errors %}
+        <p style="margin:0;{% if not loop.first %}margin-top:4px;{% endif %}">{{ e }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="/register" novalidate id="reg-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="grid grid-cols-2 gap-3" style="margin-bottom:1rem;">
+          <div>
+            <label for="first_name" class="form-label">Nome <span style="color:var(--color-terracotta);">*</span></label>
+            <input
+              type="text" id="first_name" name="first_name"
+              value="{{ form_data.get('first_name','') if form_data else '' }}"
+              placeholder="Mario"
+              autocomplete="given-name"
+              class="form-input"
+              required>
+          </div>
+          <div>
+            <label for="last_name" class="form-label">Cognome <span style="color:var(--color-terracotta);">*</span></label>
+            <input
+              type="text" id="last_name" name="last_name"
+              value="{{ form_data.get('last_name','') if form_data else '' }}"
+              placeholder="Rossi"
+              autocomplete="family-name"
+              class="form-input"
+              required>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label for="email" class="form-label">Email <span style="color:var(--color-terracotta);">*</span></label>
+          <input
+            type="email" id="email" name="email"
+            value="{{ form_data.get('email','') if form_data else '' }}"
+            placeholder="mario.rossi@email.it"
+            autocomplete="email"
+            inputmode="email"
+            class="form-input"
+            required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3" style="margin-bottom:1rem;">
+          <div>
+            <label for="password" class="form-label">Password <span style="color:var(--color-terracotta);">*</span></label>
+            <input
+              type="password" id="password" name="password"
+              placeholder="Min. 8 caratteri"
+              autocomplete="new-password"
+              class="form-input"
+              required>
+          </div>
+          <div>
+            <label for="password_confirm" class="form-label">Conferma <span style="color:var(--color-terracotta);">*</span></label>
+            <input
+              type="password" id="password_confirm" name="password_confirm"
+              placeholder="Ripeti password"
+              autocomplete="new-password"
+              class="form-input"
+              required>
+          </div>
+        </div>
+        <p id="pwd-msg" style="font-size:12px;margin-top:-0.5rem;margin-bottom:1rem;display:none;"></p>
+
+        <div style="margin-bottom:1.25rem;">
+          <label for="dog_name" class="form-label">
+            Come si chiama il tuo cane? 🐾
+            <span class="form-label-opt">(facoltativo)</span>
+          </label>
+          <input
+            type="text" id="dog_name" name="dog_name"
+            value="{{ form_data.get('dog_name','') if form_data else '' }}"
+            placeholder="Rex, Bella, Luna..."
+            class="form-input">
+        </div>
+
+        <div style="background:var(--color-cream);border:1.5px solid var(--color-cipria);border-radius:12px;padding:14px 16px;margin-bottom:1.5rem;">
+          <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">
+            <input
+              type="checkbox" name="privacy" id="privacy" value="1"
+              style="margin-top:2px;width:18px;height:18px;accent-color:var(--color-terracotta);flex-shrink:0;"
+              {% if form_data and form_data.get('privacy') %}checked{% endif %}
+              required>
+            <span style="font-size:13px;color:var(--color-choco);line-height:1.6;">
+              Ho letto e accetto la
+              <a href="/privacy" target="_blank" style="color:var(--color-terracotta);font-weight:600;">Privacy Policy</a>.
+              I miei dati saranno usati esclusivamente per la gestione delle prenotazioni.
+              <span style="color:var(--color-terracotta);">*</span>
+            </span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:100%;font-size:16px;padding:16px;">
+          Crea account 🐾
+        </button>
+      </form>
+
+      <p style="text-align:center;font-size:14px;color:var(--color-muted);margin-top:1.5rem;">
+        Hai già un account?
+        <a href="/login" style="color:var(--color-terracotta);font-weight:700;text-decoration:none;">Accedi</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const pwd = document.getElementById('password');
+  const pwd2 = document.getElementById('password_confirm');
+  const msg = document.getElementById('pwd-msg');
+  function checkMatch() {
+    if (!pwd2.value) { msg.style.display='none'; return; }
+    if (pwd.value === pwd2.value) {
+      msg.textContent = '✓ Le password corrispondono.';
+      msg.style.color = '#3d6b3b';
+    } else {
+      msg.textContent = '✗ Le password non corrispondono.';
+      msg.style.color = 'var(--color-terra-dark)';
+    }
+    msg.style.display = 'block';
+  }
+  pwd.addEventListener('input', checkMatch);
+  pwd2.addEventListener('input', checkMatch);
+</script>
+{% endblock %}

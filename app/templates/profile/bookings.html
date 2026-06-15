@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Le mie prenotazioni — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px;">
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin:0;">
+      Le mie prenotazioni
+    </h1>
+    <a href="/" class="btn-secondary" style="font-size:14px;padding:10px 20px;">
+      📅 Nuova prenotazione
+    </a>
+  </div>
+
+  {% set disc_icons = {'Agility':'🏃','Dog Training 1':'🦴','Dog Training 2':'🎯','Dog Training 3':'🎀'} %}
+
+  {# ── Prossime lezioni ────────────────────────────────────── #}
+  <div style="margin-bottom:2.5rem;">
+    <p class="section-label">Prossime lezioni</p>
+
+    {% if upcoming %}
+    <div style="display:flex;flex-direction:column;gap:10px;" id="upcoming-list">
+      {% for item in upcoming %}
+      {% set a = item.appointment %}
+      <div class="booking-card" id="booking-card-{{ a.id }}">
+
+        <div class="booking-card-icon">
+          {{ disc_icons.get(a.discipline.name, '⭐') }}
+        </div>
+
+        <div class="booking-card-body">
+          <p class="booking-card-discipline">{{ a.discipline.name }}</p>
+          <p class="booking-card-meta">
+            {{ a.appointment_date | it_date('%A %d %B %Y') }}
+            &nbsp;·&nbsp;
+            {{ a.start_time.strftime('%H:%M') }} - {{ a.end_time.strftime('%H:%M') }}
+          </p>
+          <div id="cancel-feedback-{{ a.id }}" style="margin-top:4px;"></div>
+        </div>
+
+        <div class="booking-card-actions" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          {% if a.status.value == 'confirmed' %}
+          <span class="badge badge-salvia">✓ Confermata</span>
+          {% elif a.status.value == 'pending' %}
+          <span class="badge badge-terra">In attesa</span>
+          {% endif %}
+
+          {% if item.can_cancel %}
+          <form
+            hx-post="/profile/bookings/{{ a.id }}/cancel"
+            hx-target="#cancel-feedback-{{ a.id }}"
+            hx-swap="innerHTML"
+            hx-confirm="Confermi la cancellazione di questa prenotazione?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-cancel-sm">
+              ✕ Cancella
+            </button>
+          </form>
+          {% else %}
+          <span style="font-size:12px;color:var(--color-muted);white-space:nowrap;">Non cancellabile</span>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card" style="padding:3rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:0.75rem;">🐾</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--color-choco);margin-bottom:0.5rem;">
+        Nessuna lezione in programma
+      </h2>
+      <p style="color:var(--color-muted);font-size:14px;margin-bottom:1.5rem;">
+        Non hai lezioni future prenotate. Prenota subito la tua prossima sessione!
+      </p>
+      <a href="/" class="btn-primary" style="display:inline-flex;">
+        📅 Prenota ora →
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Storico lezioni ─────────────────────────────────────── #}
+  <div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+      <p class="section-label" style="margin-bottom:0;">Storico lezioni</p>
+      <div style="flex:1;height:1px;background:var(--color-cipria);"></div>
+    </div>
+
+    {% if past %}
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for a in past %}
+      <div class="booking-card" style="opacity:0.8;padding:0.85rem 1.125rem;">
+
+        <div class="booking-card-icon" style="width:38px;height:38px;font-size:1.35rem;">
+          {{ disc_icons.get(a.discipline.name, '⭐') }}
+        </div>
+
+        <div class="booking-card-body">
+          <p class="booking-card-discipline" style="font-size:14px;">{{ a.discipline.name }}</p>
+          <p class="booking-card-meta">
+            {{ a.appointment_date.strftime('%d/%m/%Y') }}
+            &nbsp;·&nbsp;
+            {{ a.start_time.strftime('%H:%M') }}
+          </p>
+        </div>
+
+        <div>
+          <span class="badge" style="background:rgba(156,184,154,0.35);color:#245c22;">✓ Completata</span>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <p style="color:var(--color-muted);font-size:14px;text-align:center;padding:1.5rem 0;">
+      Nessuna lezione completata ancora. A presto!
+    </p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

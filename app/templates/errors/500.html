@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Errore — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div style="min-height:70dvh;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center;">
+  <div style="max-width:420px;">
+    <div style="font-size:3.5rem;margin-bottom:1rem;line-height:1;">😔</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.5rem;font-weight:600;">
+      Qualcosa è andato storto
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin-bottom:2rem;line-height:1.7;">
+      {% if error_msg is defined and error_msg %}
+        {{ error_msg }}
+      {% else %}
+        Si è verificato un errore temporaneo. Riprova tra qualche istante.
+        Se il problema persiste, contattaci su WhatsApp.
+      {% endif %}
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+      <a href="/" class="btn-primary" style="display:inline-flex;">Torna alla home</a>
+      <a href="https://wa.me/393333285654" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex;">💬 WhatsApp</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

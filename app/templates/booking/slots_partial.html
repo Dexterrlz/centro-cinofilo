@@ -1,0 +1,22 @@
+{% if slots %}
+<div style="padding:1.25rem;">
+  <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+    {% for slot in slots %}
+    <a
+      href="/prenota/conferma?discipline_id={{ discipline_id }}&appointment_date={{ selected_date.isoformat() }}&start_time={{ slot.strftime('%H:%M') }}"
+      class="slot-btn">
+      {{ slot.strftime('%H:%M') }}
+    </a>
+    {% endfor %}
+  </div>
+  <p style="font-size:12px;color:var(--color-muted);margin-top:1rem;text-align:center;">
+    Clicca un orario per procedere con la prenotazione
+  </p>
+</div>
+{% else %}
+<div style="padding:3rem;text-align:center;">
+  <p style="color:var(--color-muted);font-size:14px;margin:0;">
+    Nessuno slot disponibile per questa data. Prova un altro giorno.
+  </p>
+</div>
+{% endif %}

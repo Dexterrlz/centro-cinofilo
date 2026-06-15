@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Scegli orario — {{ discipline.name }}{% endblock %}
+
+{% block nav_extra %}
+<a href="/" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+  Indietro
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
+
+  {# ── Breadcrumb ─────────────────────────────────────── #}
+  <nav class="breadcrumb">
+    <a href="/">Home</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ discipline.name }}</span>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Scegli slot</span>
+  </nav>
+
+  {# ── Intestazione disciplina ─────────────────────────── #}
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.75rem;">
+    <div style="width:48px;height:48px;border-radius:14px;background:var(--color-cream-dark);border:1.5px solid var(--color-cipria);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
+      {% set icons = {'Agility':'🏃','Dog Training 1':'🦴','Dog Training 2':'🎯','Dog Training 3':'🎀'} %}
+      {{ icons.get(discipline.name, '⭐') }}
+    </div>
+    <div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
+        {{ discipline.name }}
+      </h1>
+      <p style="color:var(--color-muted);font-size:13px;margin:0;">Slot da 30 minuti · Max 30 giorni in anticipo</p>
+    </div>
+  </div>
+
+  {# ── Errore disponibilità ─────────────────────────────── #}
+  {% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  {% if available_dates %}
+
+  {# ── Selezione data ───────────────────────────────────── #}
+  <div style="margin-bottom:2rem;">
+    <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin-bottom:0.85rem;">
+      Scegli una data
+    </p>
+
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;-ms-overflow-style:none;scrollbar-width:none;" id="date-list">
+      {% set prev_month = namespace(val='') %}
+      {% for d in available_dates %}
+        {% set this_month = d | it_date('%b %Y') %}
+        {% if this_month != prev_month.val %}
+          {% if not loop.first %}
+          <div style="width:1px;background:var(--color-cipria);flex-shrink:0;margin:8px 4px;border-radius:1px;"></div>
+          {% endif %}
+          {% set prev_month.val = this_month %}
+        {% endif %}
+        <button
+          type="button"
+          class="date-chip"
+          id="chip-{{ d.isoformat() }}"
+          hx-post="/prenota/slots"
+          hx-target="#slot-grid"
+          hx-swap="innerHTML"
+          hx-indicator="#slot-spinner"
+          hx-vals='{"discipline_id": "{{ discipline.id }}", "date": "{{ d.isoformat() }}"}'
+          onclick="activateChip(this)"
+          data-date="{{ d.isoformat() }}"
+        >
+          <span class="chip-day">{{ d | it_date('%a') }}</span>
+          <span class="chip-num">{{ d.strftime('%d') }}</span>
+          <span class="chip-mon">{{ d | it_date('%b') }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Griglia slot ─────────────────────────────────────── #}
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+      <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin:0;">
+        Orari disponibili
+      </p>
+      <span id="slot-spinner" class="htmx-indicator">
+        <span class="spinner"></span>
+      </span>
+    </div>
+
+    <div id="slot-grid" class="card" style="padding:2.5rem;text-align:center;">
+      <p style="color:var(--color-muted);font-size:14px;margin:0;">
+        Seleziona una data per vedere gli orari disponibili.
+      </p>
+    </div>
+  </div>
+
+  {% else %}
+
+  <div class="card" style="padding:3rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">📅</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+      Nessuno slot disponibile
+    </h2>
+    <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
+      Non ci sono slot disponibili nei prossimi 30 giorni per questa disciplina.
+      Prova a tornare domani o contattaci direttamente.
+    </p>
+    <a href="mailto:asdiamocilazampa@libero.it" class="btn-secondary" style="display:inline-flex;">
+      ✉️ Contattaci
+    </a>
+  </div>
+
+  {% endif %}
+
+</div>
+
+<script>
+function activateChip(el) {
+  document.querySelectorAll('.date-chip').forEach(function(c) {
+    c.classList.remove('active');
+  });
+  el.classList.add('active');
+}
+</script>
+{% endblock %}

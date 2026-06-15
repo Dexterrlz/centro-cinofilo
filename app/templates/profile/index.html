@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Il mio profilo — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;max-width:520px;">
+
+  <h1 style="font-family:'Playfair Display',serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin-bottom:1.75rem;">
+    Il mio profilo
+  </h1>
+
+  {# ── Card identità ──────────────────────────────────────── #}
+  <div class="card" style="padding:1.75rem;margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem;">
+      <div class="profile-avatar-lg">
+        {{ (current_user.first_name or 'U')[0] | upper }}{{ (current_user.last_name or 'X')[0] | upper }}
+      </div>
+      <div style="min-width:0;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin:0 0 4px;font-weight:600;">
+          {{ current_user.first_name }} {{ current_user.last_name }}
+        </h2>
+        <p style="font-size:13px;color:var(--color-muted);margin:0;">{{ current_user.email }}</p>
+        {% if current_user.dog_name %}
+        <p style="font-size:13px;color:var(--color-terracotta);margin:4px 0 0;font-weight:600;">
+          🐾 {{ current_user.dog_name }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      {% if current_user.google_id %}
+      <span class="badge badge-salvia">Google Account</span>
+      {% endif %}
+      {% if current_user.email_verified %}
+      <span class="badge badge-salvia">✓ Email verificata</span>
+      {% endif %}
+      {% if current_user.created_at %}
+      <span class="badge badge-muted">Iscritto dal {{ current_user.created_at.strftime('%d/%m/%Y') }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Form modifica ──────────────────────────────────────── #}
+  <div class="card" style="padding:1.75rem;margin-bottom:1rem;">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
+      Modifica dati
+    </h3>
+
+    <div id="profile-feedback" style="margin-bottom:0.75rem;"></div>
+
+    <form
+      hx-post="/profile"
+      hx-target="#profile-feedback"
+      hx-swap="innerHTML"
+      novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="grid grid-cols-2 gap-3" style="margin-bottom:1rem;">
+        <div>
+          <label class="form-label">Nome <span style="color:var(--color-terracotta);">*</span></label>
+          <input
+            type="text" name="first_name"
+            value="{{ current_user.first_name }}"
+            placeholder="Mario"
+            autocomplete="given-name"
+            class="form-input"
+            required>
+        </div>
+        <div>
+          <label class="form-label">Cognome <span style="color:var(--color-terracotta);">*</span></label>
+          <input
+            type="text" name="last_name"
+            value="{{ current_user.last_name }}"
+            placeholder="Rossi"
+            autocomplete="family-name"
+            class="form-input"
+            required>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label class="form-label">
+          Come si chiama il tuo cane? 🐾
+          <span class="form-label-opt">(facoltativo)</span>
+        </label>
+        <input
+          type="text" name="dog_name"
+          value="{{ current_user.dog_name or '' }}"
+          placeholder="Rex, Bella, Luna..."
+          class="form-input">
+      </div>
+
+      <button type="submit" class="btn-primary" style="width:100%;">
+        Salva modifiche
+      </button>
+    </form>
+  </div>
+
+  {# ── Link cambio password ─────────────────────────────────── #}
+  <div style="text-align:center;padding-top:0.5rem;">
+    <a href="/profile/change-password" style="font-size:14px;color:var(--color-terracotta);font-weight:600;text-decoration:none;">
+      🔑 Cambia password →
+    </a>
+  </div>
+
+</div>
+{% endblock %}

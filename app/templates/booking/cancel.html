@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Cancella prenotazione — ASD Diamoci la Zampa{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2.5rem;padding-bottom:3rem;max-width:480px;">
+
+  {% if success %}
+  {# ── Cancellazione avvenuta ───────────────────────────── #}
+  <div style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">🐾</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.5rem;font-weight:600;">
+      Prenotazione cancellata
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin-bottom:2rem;">
+      La tua prenotazione è stata cancellata correttamente.
+    </p>
+    {% if appointment %}
+    <div class="summary-card" style="margin-bottom:1.75rem;text-align:left;">
+      <div class="summary-row">
+        <span class="summary-label">Disciplina</span>
+        <span class="summary-value">{{ appointment.discipline.name }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Data</span>
+        <span class="summary-value">{{ appointment.appointment_date.strftime('%d/%m/%Y') }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Orario</span>
+        <span class="summary-value">{{ appointment.start_time.strftime('%H:%M') }}</span>
+      </div>
+    </div>
+    {% endif %}
+    <a href="/" class="btn-primary" style="display:inline-flex;font-size:15px;">
+      Prenota di nuovo
+    </a>
+  </div>
+
+  {% elif already_cancelled %}
+  {# ── Già cancellata ───────────────────────────────────── #}
+  <div style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.5rem;font-weight:600;">
+      Già cancellata
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin-bottom:2rem;">
+      Questa prenotazione è già stata cancellata in precedenza.
+    </p>
+    <a href="/" class="btn-primary" style="display:inline-flex;">Torna alla home</a>
+  </div>
+
+  {% elif not can_cancel %}
+  {# ── Non cancellabile ─────────────────────────────────── #}
+  <div style="text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">⛔</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.5rem;font-weight:600;">
+      Cancellazione non possibile
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin-bottom:2rem;">
+      {% if error %}{{ error }}{% else %}Non è possibile cancellare con meno di 24 ore di anticipo.{% endif %}
+    </p>
+    <p style="font-size:13px;color:var(--color-muted);margin-bottom:1.75rem;">
+      Per assistenza contattaci su
+      <a href="https://wa.me/393333285654" style="color:var(--color-terracotta);">WhatsApp</a>
+      o a <a href="mailto:asdiamocilazampa@libero.it" style="color:var(--color-terracotta);">asdiamocilazampa@libero.it</a>
+    </p>
+    <a href="/" class="btn-primary" style="display:inline-flex;">Torna alla home</a>
+  </div>
+
+  {% else %}
+  {# ── Conferma cancellazione ───────────────────────────── #}
+  <div style="text-align:center;margin-bottom:1.75rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.4rem;font-weight:600;">
+      Vuoi cancellare la prenotazione?
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin:0;">
+      Stai per cancellare il seguente appuntamento.
+    </p>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-error" style="margin-bottom:1.25rem;">{{ error }}</div>
+  {% endif %}
+
+  {% if appointment %}
+  <div class="summary-card" style="margin-bottom:1rem;">
+    <div class="summary-row">
+      <span class="summary-label">Disciplina</span>
+      <span class="summary-value">{{ appointment.discipline.name }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Data</span>
+      <span class="summary-value">{{ appointment.appointment_date.strftime('%d/%m/%Y') }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Orario</span>
+      <span class="summary-value">{{ appointment.start_time.strftime('%H:%M') }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Intestatario</span>
+      <span class="summary-value">{{ appointment.user.first_name }} {{ appointment.user.last_name }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="alert alert-warning" style="margin-bottom:1.5rem;font-size:13px;">
+    ⚠️ Puoi cancellare solo entro 24 ore dall'appuntamento. Questa operazione non è reversibile.
+  </div>
+
+  <form method="POST" action="/cancella/{{ appointment.cancellation_token if appointment else '' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn-danger" style="width:100%;font-size:15px;padding:16px;margin-bottom:10px;">
+      Sì, cancella la prenotazione
+    </button>
+  </form>
+
+  <a href="/" class="btn-secondary" style="display:flex;justify-content:center;font-size:15px;">
+    No, torna indietro
+  </a>
+
+  {% endif %}
+</div>
+{% endblock %}

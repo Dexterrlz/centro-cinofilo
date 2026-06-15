@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Conferma prenotazione — ASD Diamoci la Zampa{% endblock %}
+
+{% block nav_extra %}
+{% if discipline %}
+<a href="/prenota/{{ discipline.id }}" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+  Indietro
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;max-width:480px;">
+
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem;">📋</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--color-choco);margin-bottom:0.35rem;font-weight:600;">
+      Conferma prenotazione
+    </h1>
+    <p style="color:var(--color-muted);font-size:14px;margin:0;">
+      Verifica i dettagli e conferma il tuo slot.
+    </p>
+  </div>
+
+  {% if errors %}
+  <div class="alert alert-error">
+    {% for e in errors %}<p style="margin:0;{% if not loop.first %}margin-top:4px;{% endif %}">{{ e }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if discipline and appointment_date and start_time %}
+
+  {# ── Dettagli slot ──────────────────────────────────── #}
+  <div style="margin-bottom:1rem;">
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin-bottom:0.6rem;">
+      Dettagli lezione
+    </p>
+    <div class="summary-card" style="margin-bottom:1rem;">
+      <div class="summary-row">
+        <span class="summary-label">Disciplina</span>
+        <span class="summary-value">{{ discipline.name }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Data</span>
+        <span class="summary-value">{{ appointment_date | it_date('%A %d %B %Y') }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Orario</span>
+        <span class="summary-value">{{ start_time }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Durata</span>
+        <span class="summary-value">30 minuti</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Dati utente ────────────────────────────────────── #}
+  <div style="margin-bottom:1.75rem;">
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin-bottom:0.6rem;">
+      Intestatario
+    </p>
+    <div class="summary-card" style="background:var(--color-cream);">
+      <div class="summary-row">
+        <span class="summary-label">Nome</span>
+        <span class="summary-value">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Email</span>
+        <span class="summary-value">{{ current_user.email }}</span>
+      </div>
+      {% if current_user.dog_name %}
+      <div class="summary-row">
+        <span class="summary-label">Cane 🐾</span>
+        <span class="summary-value">{{ current_user.dog_name }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="POST" action="/prenota/crea">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="discipline_id" value="{{ discipline.id }}">
+    <input type="hidden" name="appointment_date" value="{{ appointment_date.isoformat() }}">
+    <input type="hidden" name="start_time" value="{{ start_time }}">
+    <button type="submit" class="btn-primary" style="width:100%;font-size:16px;padding:16px;">
+      Conferma prenotazione ✓
+    </button>
+  </form>
+
+  <p style="font-size:12px;color:var(--color-muted);text-align:center;margin-top:0.75rem;">
+    Riceverai una email di conferma con il link per cancellare
+  </p>
+
+  {% endif %}
+</div>
+{% endblock %}

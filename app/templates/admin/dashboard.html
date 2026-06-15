@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pannello Admin — Centro Cinofilo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<!-- Navbar admin -->
+<nav class="bg-gray-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+  <div class="flex items-center gap-3">
+    <span class="font-bold text-base">🐾 Admin</span>
+    <span class="text-gray-400 text-sm hidden sm:block">|</span>
+    <span class="text-gray-400 text-sm hidden sm:block">{{ admin_username }}</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="/" target="_blank" class="text-gray-300 hover:text-white text-xs px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+      Sito pubblico ↗
+    </a>
+    <a href="/admin/logout" class="text-gray-300 hover:text-white text-xs px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+      Esci
+    </a>
+  </div>
+</nav>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+  {% set status_labels_it = {
+    'pending': 'In attesa',
+    'confirmed': 'Confermata',
+    'cancelled': 'Cancellata',
+    'completed': 'Completata',
+    'no_show': 'Assente'
+  } %}
+
+  <!-- Stats -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-gray-900">{{ stats.oggi }}</p>
+      <p class="text-xs text-gray-500 mt-1">Oggi</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-blue-600">{{ stats.imminenti }}</p>
+      <p class="text-xs text-gray-500 mt-1">Prossimi</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-gray-900">{{ stats.totale }}</p>
+      <p class="text-xs text-gray-500 mt-1">Totali</p>
+    </div>
+  </div>
+
+  <!-- Tabs navigation -->
+  <div class="flex gap-1 mb-6 bg-gray-200 p-1 rounded-xl w-fit">
+    <button onclick="showTab('prenotazioni')" id="tab-prenotazioni"
+      class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-white shadow-sm text-gray-900">
+      Prenotazioni
+    </button>
+    <button onclick="showTab('disponibilita')" id="tab-disponibilita"
+      class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-600 hover:text-gray-900">
+      Disponibilità
+    </button>
+    <button onclick="showTab('date-bloccate')" id="tab-date-bloccate"
+      class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-600 hover:text-gray-900">
+      Date bloccate
+    </button>
+  </div>
+
+  <!-- ─── TAB: PRENOTAZIONI ──────────────────────────────────────────── -->
+  <div id="section-prenotazioni" class="tab-section">
+
+    <!-- Filtri -->
+    <form method="GET" action="/admin" class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-wrap gap-3 items-end shadow-sm">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
+        <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Tutte</option>
+          {% for d in disciplines %}
+          <option value="{{ d.id }}" {% if filter_discipline == d.id|string %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Stato</label>
+        <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Tutti</option>
+          {% for s in statuses %}
+          <option value="{{ s.value }}" {% if filter_status == s.value %}selected{% endif %}>{{ status_labels_it.get(s.value, s.value) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Dal</label>
+        <input type="date" name="date_from" value="{{ filter_date_from }}"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Al</label>
+        <input type="date" name="date_to" value="{{ filter_date_to }}"
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+        Filtra
+      </button>
+      <a href="/admin" class="text-gray-500 hover:text-gray-700 text-sm py-2">Reset</a>
+    </form>
+
+    <!-- Tabella prenotazioni -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {% if appointments %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Data/Ora</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Cliente</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Email</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Stato</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for a in appointments %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 py-3 font-medium whitespace-nowrap">
+                {{ a.appointment_date.strftime('%d/%m/%y') }}
+                <span class="text-gray-500 ml-1">{{ a.start_time.strftime('%H:%M') }}</span>
+              </td>
+              <td class="px-4 py-3 text-gray-700">{{ a.discipline.name }}</td>
+              <td class="px-4 py-3 text-gray-700 hidden sm:table-cell">
+                {{ a.user.first_name }} {{ a.user.last_name }}
+              </td>
+              <td class="px-4 py-3 text-gray-500 hidden md:table-cell text-xs">{{ a.user.email }}</td>
+              <td class="px-4 py-3">
+                {% set status_colors = {
+                  'pending': 'bg-yellow-100 text-yellow-800',
+                  'confirmed': 'bg-green-100 text-green-800',
+                  'cancelled': 'bg-gray-100 text-gray-600',
+                  'completed': 'bg-blue-100 text-blue-800',
+                  'no_show': 'bg-red-100 text-red-800'
+                } %}
+                <span class="px-2 py-1 rounded-full text-xs font-medium {{ status_colors.get(a.status.value, 'bg-gray-100 text-gray-600') }}">
+                  {{ status_labels_it.get(a.status.value, a.status.value) }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <form method="POST" action="/admin/prenotazioni/{{ a.id }}/stato" class="flex gap-1">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <select name="status" class="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    {% for s in statuses %}
+                    <option value="{{ s.value }}" {% if s == a.status %}selected{% endif %}>{{ status_labels_it.get(s.value, s.value) }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="bg-gray-900 text-white px-2 py-1 rounded-lg text-xs hover:bg-gray-700 transition-colors whitespace-nowrap">
+                    Salva
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-8 text-center text-gray-400 text-sm">
+        Nessuna prenotazione trovata con i filtri selezionati.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ─── TAB: DISPONIBILITÀ ──────────────────────────────────────────── -->
+  <div id="section-disponibilita" class="tab-section hidden">
+
+    <!-- Aggiungi regola -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
+      <h3 class="text-sm font-semibold text-gray-800 mb-4">Aggiungi fascia oraria</h3>
+      <form method="POST" action="/admin/disponibilita" class="flex flex-wrap gap-3 items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
+          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            {% for d in disciplines %}
+            <option value="{{ d.id }}">{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Giorno</label>
+          <select name="day_of_week" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            {% for g in giorni %}
+            <option value="{{ loop.index0 }}">{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Dalle</label>
+          <input type="time" name="start_time" min="09:00" max="20:30" step="1800"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Alle</label>
+          <input type="time" name="end_time" min="09:30" max="21:00" step="1800"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+          Aggiungi
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista regole -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {% if rules %}
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Giorno</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fascia oraria</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for r in rules %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">{{ r.discipline.name }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ giorni[r.day_of_week] }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ r.start_time.strftime('%H:%M') }} – {{ r.end_time.strftime('%H:%M') }}</td>
+            <td class="px-4 py-3 text-right">
+              <form method="POST" action="/admin/disponibilita/{{ r.id }}/elimina">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium" onclick="return confirm('Eliminare questa regola?')">
+                  Elimina
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-8 text-center text-gray-400 text-sm">
+        Nessuna regola di disponibilità configurata.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ─── TAB: DATE BLOCCATE ──────────────────────────────────────────── -->
+  <div id="section-date-bloccate" class="tab-section hidden">
+
+    <!-- Aggiungi data bloccata -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
+      <h3 class="text-sm font-semibold text-gray-800 mb-4">Blocca una data</h3>
+      <form method="POST" action="/admin/date-bloccate" class="flex flex-wrap gap-3 items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Data</label>
+          <input type="date" name="blocked_date" min="{{ today.isoformat() }}"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Disciplina (opz.)</label>
+          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tutte le discipline</option>
+            {% for d in disciplines %}
+            <option value="{{ d.id }}">{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Motivo (opz.)</label>
+          <input type="text" name="reason" placeholder="es. Chiusura festiva"
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+          Blocca
+        </button>
+      </form>
+    </div>
+
+    <!-- Lista date bloccate -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {% if blocked_dates %}
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Data</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Motivo</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for bd in blocked_dates %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">{{ bd.blocked_date.strftime('%d/%m/%Y') }}</td>
+            <td class="px-4 py-3 text-gray-600">
+              {% if bd.all_disciplines or not bd.discipline_id %}
+                Tutte
+              {% elif bd.discipline %}
+                {{ bd.discipline.name }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-gray-500 hidden sm:table-cell">{{ bd.reason or '—' }}</td>
+            <td class="px-4 py-3 text-right">
+              <form method="POST" action="/admin/date-bloccate/{{ bd.id }}/elimina">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium" onclick="return confirm('Rimuovere il blocco?')">
+                  Elimina
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-8 text-center text-gray-400 text-sm">
+        Nessuna data bloccata.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+function showTab(name) {
+  // Nascondi tutte le sezioni
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+  // Resetta tutti i tab btn
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+    b.classList.add('text-gray-600');
+  });
+  // Mostra la sezione attiva
+  document.getElementById('section-' + name).classList.remove('hidden');
+  var activeBtn = document.getElementById('tab-' + name);
+  activeBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+  activeBtn.classList.remove('text-gray-600');
+}
+
+// Gestione tab da hash URL
+var hash = window.location.hash.replace('#', '');
+if (['disponibilita', 'date-bloccate'].includes(hash)) {
+  showTab(hash);
+}
+</script>
+</body>
+</html>
