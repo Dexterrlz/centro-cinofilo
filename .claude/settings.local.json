@@ -3,7 +3,27 @@
     "allow": [
       "Bash(pip --version)",
       "Bash(pg_isready -h localhost -p 5432)",
-      "Bash(docker --version)"
+      "Bash(docker --version)",
+      "Bash(git checkout *)",
+      "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" http://localhost:8000/login)",
+      "Bash(cd /tmp)",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/prenota/5)",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/prenota/5 -o slot_page.html)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(powershell.exe -Command \"Get-Process -Name python,uvicorn -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/prenotazione/__TRACKED_VAR__)",
+      "Bash(curl -s -b admin_cookies.txt \"http://localhost:8000/admin?user_search=Locatelli\" -o filtered.html -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s -b admin_cookies.txt \"http://localhost:8000/admin?user_search=Prova\" -o filtered2.html -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s -o /dev/null -w \"server pronto: %{http_code}\\\\n\" http://localhost:8000/login)",
+      "Bash(curl -s -b admin_cookies.txt -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8000/admin)",
+      "Bash(curl -s -b admin_cookies.txt http://localhost:8000/admin -o dash_check.html -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/istruttore/3 -o santa.html -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/prenota/8 -o range.html -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s -b cookies.txt \"http://localhost:8000/prenota/conferma?discipline_id=5&appointment_date=2026-06-26&start_time=19:00\" -o confirm_test.html -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/profile -o profile_test.html -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/profile)",
+      "Bash(curl -s -b cookies.txt http://localhost:8000/istruttore/1)"
     ]
   }
 }

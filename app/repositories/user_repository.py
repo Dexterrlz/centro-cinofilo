@@ -63,7 +63,7 @@ class UserRepository:
         from sqlalchemy.orm import joinedload
         return (
             self.db.query(Appointment)
-            .options(joinedload(Appointment.discipline))
+            .options(joinedload(Appointment.discipline), joinedload(Appointment.instructor))
             .filter(
                 Appointment.user_id == user_id,
                 Appointment.status.in_(statuses),

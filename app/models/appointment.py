@@ -25,6 +25,8 @@ class Appointment(Base):
     id = Column(Integer, primary_key=True, index=True)
     discipline_id = Column(Integer, ForeignKey("disciplines.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    instructor_id = Column(Integer, ForeignKey("instructors.id"), nullable=True)
+    package_id = Column(Integer, ForeignKey("packages.id"), nullable=True)
     appointment_date = Column(Date, nullable=False, index=True)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
@@ -41,3 +43,5 @@ class Appointment(Base):
 
     discipline = relationship("Discipline", back_populates="appointments")
     user = relationship("User", back_populates="appointments")
+    instructor = relationship("Instructor", back_populates="appointments")
+    package = relationship("Package")

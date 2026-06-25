@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from datetime import time as time_type
 
 from fastapi import APIRouter, Depends, Request
@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.repositories.discipline_repository import DisciplineRepository
-from app.services.availability_service import AvailabilityService
+from app.repositories.instructor_repository import InstructorRepository
+from app.repositories.package_repository import PackageRepository
+from app.services.availability_service import AvailabilityService, get_booking_window
 from app.utils.auth import require_auth
 from app.utils.csrf import get_csrf_token
 from app.utils.date_it import register_date_filters
@@ -18,13 +20,49 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 register_date_filters(templates)
 
+MAX_RANGE_DAYS = 13  # ampiezza massima della finestra prenotabile (2 settimane)
+
 
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    disciplines = DisciplineRepository(db).get_all_active()
+    """Step 1 del flusso prenotazione: scelta istruttore."""
+    instructors = InstructorRepository(db).get_all_active_with_disciplines()
+    instructors = [i for i in instructors if any(d.is_active for d in i.disciplines)]
     return templates.TemplateResponse(
         request, "index.html",
-        {"disciplines": disciplines, "csrf_token": get_csrf_token(request), "current_user": user},
+        {"instructors": instructors, "csrf_token": get_csrf_token(request), "current_user": user},
+    )
+
+
+@router.get("/istruttore/{instructor_id}", response_class=HTMLResponse)
+async def select_discipline_page(
+    request: Request, instructor_id: int,
+    user: User = Depends(require_auth), db: Session = Depends(get_db)
+):
+    """Step 2 del flusso prenotazione: scelta disciplina per l'istruttore selezionato."""
+    instructor = InstructorRepository(db).get_by_id(instructor_id)
+    if not instructor or not instructor.is_active:
+        return templates.TemplateResponse(request, "errors/404.html", status_code=404)
+
+    package_repo = PackageRepository(db)
+    disciplines = []
+    for d in sorted(instructor.disciplines, key=lambda x: x.name):
+        if not d.is_active:
+            continue
+        package = package_repo.get_by_combo(user.id, d.id, instructor_id)
+        status = None
+        if package:
+            status = "exhausted" if (not package.is_active or package.lessons_completed >= package.total_lessons) else "active"
+        disciplines.append({"discipline": d, "package": package, "status": status})
+
+    return templates.TemplateResponse(
+        request, "booking/select_discipline.html",
+        {
+            "instructor": instructor,
+            "disciplines": disciplines,
+            "csrf_token": get_csrf_token(request),
+            "current_user": user,
+        },
     )
 
 
@@ -32,18 +70,39 @@ async def homepage(request: Request, user: User = Depends(require_auth), db: Ses
 async def get_slots_partial(
     request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)
 ):
-    """Endpoint HTMX: restituisce la griglia di slot per data e disciplina."""
+    """Endpoint HTMX: restituisce gli slot disponibili nel range di date, raggruppati per giorno."""
     form = await request.form()
     try:
         discipline_id = int(form.get("discipline_id", ""))
-        requested_date = date.fromisoformat(form.get("date", ""))
+        date_from = date.fromisoformat(form.get("date_from", ""))
+        date_to = date.fromisoformat(form.get("date_to", ""))
     except (ValueError, TypeError):
         return HTMLResponse("<p class='text-red-500 text-sm p-4'>Dati non validi.</p>", status_code=400)
 
-    slots = AvailabilityService(db).get_available_slots(discipline_id, requested_date)
+    if date_to < date_from or (date_to - date_from).days > MAX_RANGE_DAYS:
+        return HTMLResponse("<p class='text-red-500 text-sm p-4'>Intervallo di date non valido.</p>", status_code=400)
+
+    availability = AvailabilityService(db)
+    days = []
+    current = date_from
+    while current <= date_to:
+        slots = availability.get_available_slots(discipline_id, current)
+        if slots:
+            suggested = availability.get_suggested_slots_for_date(discipline_id, current)
+            days.append({
+                "date": current,
+                "slots": [{"time": s, "is_suggested": s in suggested} for s in slots],
+            })
+        current += timedelta(days=1)
+
     return templates.TemplateResponse(
         request, "booking/slots_partial.html",
-        {"slots": slots, "discipline_id": discipline_id, "selected_date": requested_date},
+        {
+            "days": days,
+            "discipline_id": discipline_id,
+            "date_from": date_from,
+            "date_to": date_to,
+        },
     )
 
 
@@ -73,11 +132,17 @@ async def booking_confirm_page(
 
     availability = AvailabilityService(db)
     if not availability.is_slot_available(discipline_id, parsed_date, slot_time):
+        window_start, window_end = get_booking_window()
+        available_dates = availability.get_available_dates(discipline_id)
         return templates.TemplateResponse(
             request, "booking/select_slot.html",
             {
                 "discipline": discipline,
-                "available_dates": availability.get_available_dates(discipline_id),
+                "min_date": available_dates[0] if available_dates else window_start,
+                "max_date": available_dates[-1] if available_dates else window_end,
+                "window_start": window_start,
+                "window_end": window_end,
+                "has_availability": bool(available_dates),
                 "error": "Questo orario non e piu disponibile. Scegli un altro slot.",
                 "csrf_token": get_csrf_token(request),
                 "current_user": user,
@@ -158,16 +223,37 @@ async def select_slot_page(
     request: Request, discipline_id: int,
     user: User = Depends(require_auth), db: Session = Depends(get_db)
 ):
+    """Step 3 del flusso prenotazione: range picker date."""
     discipline = DisciplineRepository(db).get_by_id(discipline_id)
     if not discipline or not discipline.is_active:
         return templates.TemplateResponse(request, "errors/404.html", status_code=404)
 
-    available_dates = AvailabilityService(db).get_available_dates(discipline_id)
+    if discipline.instructor_id:
+        package = PackageRepository(db).get_by_combo(user.id, discipline_id, discipline.instructor_id)
+        if package and (not package.is_active or package.lessons_completed >= package.total_lessons):
+            return templates.TemplateResponse(
+                request, "booking/select_slot.html",
+                {
+                    "discipline": discipline,
+                    "package_exhausted": True,
+                    "csrf_token": get_csrf_token(request),
+                    "current_user": user,
+                },
+            )
+
+    availability = AvailabilityService(db)
+    available_dates = availability.get_available_dates(discipline_id)
+    window_start, window_end = get_booking_window()
+
     return templates.TemplateResponse(
         request, "booking/select_slot.html",
         {
             "discipline": discipline,
-            "available_dates": available_dates,
+            "min_date": available_dates[0] if available_dates else window_start,
+            "max_date": available_dates[-1] if available_dates else window_end,
+            "window_start": window_start,
+            "window_end": window_end,
+            "has_availability": bool(available_dates),
             "csrf_token": get_csrf_token(request),
             "current_user": user,
         },

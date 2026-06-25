@@ -19,6 +19,12 @@
       <span class="summary-label">Disciplina</span>
       <span class="summary-value">{{ appointment.discipline.name }}</span>
     </div>
+    {% if appointment.instructor %}
+    <div class="summary-row">
+      <span class="summary-label">Istruttore</span>
+      <span class="summary-value">{{ appointment.instructor.name }}</span>
+    </div>
+    {% endif %}
     <div class="summary-row">
       <span class="summary-label">Data</span>
       <span class="summary-value">{{ appointment.appointment_date.strftime('%d/%m/%Y') }}</span>

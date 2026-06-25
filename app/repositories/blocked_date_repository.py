@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from typing import List, Optional
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
@@ -16,6 +16,7 @@ class BlockedDateRepository:
                 BlockedDate.blocked_date == check_date,
                 or_(
                     BlockedDate.all_disciplines == True,
+                    BlockedDate.is_global == True,
                     BlockedDate.discipline_id == discipline_id,
                 ),
             )
@@ -51,6 +52,23 @@ class BlockedDateRepository:
         self.db.commit()
         self.db.refresh(bd)
         return bd
+
+    def create_global_range(self, date_from: date, date_to: date, reason: str = None) -> int:
+        """Crea un blocco ferie globale (tutte le discipline) per ogni giorno nel range incluso."""
+        current = date_from
+        count = 0
+        while current <= date_to:
+            self.db.add(BlockedDate(
+                blocked_date=current,
+                discipline_id=None,
+                reason=reason,
+                all_disciplines=True,
+                is_global=True,
+            ))
+            current += timedelta(days=1)
+            count += 1
+        self.db.commit()
+        return count
 
     def delete(self, blocked_id: int) -> bool:
         bd = self.get_by_id(blocked_id)

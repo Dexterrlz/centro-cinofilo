@@ -118,3 +118,61 @@ class EmailService:
         except Exception as exc:
             logger.error("Errore invio cancellazione a %s: %s", email, exc)
             return False
+
+    @staticmethod
+    def send_package_exhausted_notice(email: str, first_name: str, discipline_name: str) -> bool:
+        """Invia email di avviso pacchetto lezioni esaurito."""
+        try:
+            resend.api_key = settings.RESEND_API_KEY
+            resend.Emails.send({
+                "from": _sender(),
+                "to": [email],
+                "subject": f"Pacchetto esaurito — {discipline_name}",
+                "html": f"""
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1f2937;">
+  <h2>Hai completato il tuo pacchetto!</h2>
+  <p style="color:#4b5563;">Ciao {first_name}, hai completato tutte le lezioni del tuo pacchetto per <strong>{discipline_name}</strong>.</p>
+  <div style="background:#fff7ed;border-left:4px solid #f57c00;border-radius:6px;padding:18px;margin:24px 0;">
+    <p style="margin:0;">Per continuare a prenotare lezioni, contatta il centro per rinnovare il pacchetto.</p>
+  </div>
+  <p style="color:#6b7280;font-size:14px;">📞 333 328 5654 · ✉️ asdiamocilazampa@libero.it</p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0;">
+  <p style="color:#9ca3af;font-size:12px;">{settings.APP_NAME}</p>
+</div>""",
+            })
+            logger.info("Notifica pacchetto esaurito inviata a %s", email)
+            return True
+        except Exception as exc:
+            logger.error("Errore invio notifica pacchetto esaurito a %s: %s", email, exc)
+            return False
+
+    @staticmethod
+    def send_admin_password_reset(email: str, name: str, reset_url: str) -> bool:
+        """Invia email di reset password per il pannello admin istruttori."""
+        try:
+            resend.api_key = settings.RESEND_API_KEY
+            resend.Emails.send({
+                "from": _sender(),
+                "to": [email],
+                "subject": f"Reimposta la password — {settings.APP_NAME}",
+                "html": f"""
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1f2937;">
+  <h2>Reimposta la tua password</h2>
+  <p style="color:#4b5563;">Ciao {name}, abbiamo ricevuto una richiesta di reimpostazione della password per il pannello amministrativo.</p>
+  <div style="margin:32px 0;">
+    <a href="{reset_url}"
+       style="display:inline-block;background:#1f2937;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-size:16px;font-weight:600;">
+      Reimposta password
+    </a>
+  </div>
+  <p style="color:#6b7280;font-size:14px;">Il link e valido per <strong>24 ore</strong>.</p>
+  <p style="color:#6b7280;font-size:14px;">Se non hai richiesto tu il reset, ignora questa email.</p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+  <p style="color:#9ca3af;font-size:12px;">{settings.APP_NAME}</p>
+</div>""",
+            })
+            logger.info("Email reset password admin inviata a %s", email)
+            return True
+        except Exception as exc:
+            logger.error("Errore invio reset password admin a %s: %s", email, exc)
+            return False

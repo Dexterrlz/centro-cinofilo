@@ -31,6 +31,9 @@
 
         <div class="booking-card-body">
           <p class="booking-card-discipline">{{ a.discipline.name }}</p>
+          {% if a.instructor %}
+          <p class="booking-card-instructor">con {{ a.instructor.name }}</p>
+          {% endif %}
           <p class="booking-card-meta">
             {{ a.appointment_date | it_date('%A %d %B %Y') }}
             &nbsp;·&nbsp;
@@ -100,6 +103,9 @@
 
         <div class="booking-card-body">
           <p class="booking-card-discipline" style="font-size:14px;">{{ a.discipline.name }}</p>
+          {% if a.instructor %}
+          <p class="booking-card-instructor">con {{ a.instructor.name }}</p>
+          {% endif %}
           <p class="booking-card-meta">
             {{ a.appointment_date.strftime('%d/%m/%Y') }}
             &nbsp;·&nbsp;

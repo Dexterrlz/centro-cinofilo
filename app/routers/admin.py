@@ -1,5 +1,5 @@
 import logging
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -14,7 +14,10 @@ from app.repositories.appointment_repository import AppointmentRepository
 from app.repositories.availability_rule_repository import AvailabilityRuleRepository
 from app.repositories.blocked_date_repository import BlockedDateRepository
 from app.repositories.discipline_repository import DisciplineRepository
+from app.repositories.instructor_repository import InstructorRepository
+from app.repositories.package_repository import PackageRepository
 from app.services.admin_service import AdminService
+from app.services.booking_service import BookingService
 from app.utils.csrf import get_csrf_token, validate_csrf
 from app.utils.date_it import register_date_filters
 
@@ -30,6 +33,14 @@ GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato",
 def _require_admin(request: Request):
     """Restituisce username se autenticato, altrimenti None."""
     return request.session.get("admin_username")
+
+
+def _current_instructor(request: Request, db: Session):
+    """Restituisce l'oggetto Instructor dell'admin loggato, o None."""
+    username = _require_admin(request)
+    if not username:
+        return None
+    return InstructorRepository(db).get_by_username(username)
 
 
 # ─── Login / Logout ───────────────────────────────────────────────────────────
@@ -73,6 +84,128 @@ async def logout(request: Request):
     return RedirectResponse(url="/admin/login", status_code=302)
 
 
+# ─── Password dimenticata ──────────────────────────────────────────────────────
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse(
+        request, "admin/forgot_password.html",
+        {"csrf_token": get_csrf_token(request)},
+    )
+
+
+@router.post("/forgot-password", response_class=HTMLResponse)
+@limiter.limit("5/hour")
+async def forgot_password(request: Request, db: Session = Depends(get_db)):
+    await validate_csrf(request)
+    form = await request.form()
+    username = form.get("username", "").strip()
+
+    if username:
+        AdminService(db).request_password_reset(username)
+
+    return templates.TemplateResponse(
+        request, "admin/forgot_password.html",
+        {
+            "csrf_token": get_csrf_token(request),
+            "sent": True,
+        },
+    )
+
+
+@router.get("/reset-password/{token}", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str):
+    return templates.TemplateResponse(
+        request, "admin/reset_password.html",
+        {"csrf_token": get_csrf_token(request), "token": token},
+    )
+
+
+@router.post("/reset-password/{token}", response_class=HTMLResponse)
+async def reset_password(request: Request, token: str, db: Session = Depends(get_db)):
+    await validate_csrf(request)
+    form = await request.form()
+    new_password = form.get("new_password", "")
+    confirm_password = form.get("confirm_password", "")
+
+    if new_password != confirm_password:
+        return templates.TemplateResponse(
+            request, "admin/reset_password.html",
+            {"csrf_token": get_csrf_token(request), "token": token, "error": "Le password non corrispondono."},
+            status_code=422,
+        )
+
+    result = AdminService(db).reset_password(token, new_password)
+    if not result["success"]:
+        return templates.TemplateResponse(
+            request, "admin/reset_password.html",
+            {"csrf_token": get_csrf_token(request), "token": token, "error": result["message"]},
+            status_code=422,
+        )
+
+    return RedirectResponse(url="/admin/login?reset=ok", status_code=303)
+
+
+# ─── Cambio password dal pannello ──────────────────────────────────────────────
+
+@router.get("/change-password", response_class=HTMLResponse)
+async def change_password_page(request: Request, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    return templates.TemplateResponse(
+        request, "admin/change_password.html",
+        {"csrf_token": get_csrf_token(request), "admin_username": _require_admin(request)},
+    )
+
+
+@router.post("/change-password", response_class=HTMLResponse)
+async def change_password(request: Request, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+    instructor = _current_instructor(request, db)
+    if not instructor:
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    form = await request.form()
+    current_password = form.get("current_password", "")
+    new_password = form.get("new_password", "")
+    confirm_password = form.get("confirm_password", "")
+
+    if new_password != confirm_password:
+        return templates.TemplateResponse(
+            request, "admin/change_password.html",
+            {
+                "csrf_token": get_csrf_token(request),
+                "admin_username": _require_admin(request),
+                "error": "Le password non corrispondono.",
+            },
+            status_code=422,
+        )
+
+    result = AdminService(db).change_password(instructor.id, current_password, new_password)
+    if not result["success"]:
+        return templates.TemplateResponse(
+            request, "admin/change_password.html",
+            {
+                "csrf_token": get_csrf_token(request),
+                "admin_username": _require_admin(request),
+                "error": result["message"],
+            },
+            status_code=422,
+        )
+
+    return templates.TemplateResponse(
+        request, "admin/change_password.html",
+        {
+            "csrf_token": get_csrf_token(request),
+            "admin_username": _require_admin(request),
+            "success": True,
+        },
+    )
+
+
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 
 @router.get("", response_class=HTMLResponse)
@@ -92,6 +225,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     discipline_filter = request.query_params.get("discipline_id")
     date_from_str = request.query_params.get("date_from")
     date_to_str = request.query_params.get("date_to")
+    user_search = (request.query_params.get("user_search") or "").strip()
 
     try:
         date_from = date.fromisoformat(date_from_str) if date_from_str else None
@@ -111,16 +245,31 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 
     discipline_id_filter = int(discipline_filter) if discipline_filter and discipline_filter.isdigit() else None
 
+    # Vista default (nessun filtro attivo): settimana corrente + prossima settimana
+    no_filters = not (status_filter or discipline_filter or date_from_str or date_to_str or user_search)
+    if no_filters:
+        monday = today - timedelta(days=today.weekday())
+        date_from = monday
+        date_to = monday + timedelta(days=13)
+
     appointments = appointment_repo.get_all_filtered(
         status=status_enum,
         discipline_id=discipline_id_filter,
         date_from=date_from,
         date_to=date_to,
+        user_search=user_search or None,
     )
 
-    disciplines = discipline_repo.get_all()
+    disciplines = discipline_repo.get_all_active()
+    disciplines_manageable = discipline_repo.get_all_manageable()
     rules = rule_repo.get_all()
     blocked_dates = blocked_repo.get_all()
+
+    # Pacchetti raggruppati per utente (vista Pacchetti)
+    packages = PackageRepository(db).get_all_with_relations()
+    packages_by_user = {}
+    for p in packages:
+        packages_by_user.setdefault(p.user, []).append(p)
 
     stats = {
         "oggi": appointment_repo.count_by_date(today),
@@ -132,10 +281,13 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         request, "admin/dashboard.html",
         {
             "admin_username": _require_admin(request),
+            "current_instructor": _current_instructor(request, db),
             "appointments": appointments,
             "disciplines": disciplines,
+            "disciplines_manageable": disciplines_manageable,
             "rules": rules,
             "blocked_dates": blocked_dates,
+            "packages_by_user": packages_by_user,
             "stats": stats,
             "giorni": GIORNI,
             "statuses": list(AppointmentStatus),
@@ -143,15 +295,16 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
             "csrf_token": get_csrf_token(request),
             "filter_status": status_filter or "",
             "filter_discipline": discipline_filter or "",
-            "filter_date_from": date_from_str or "",
-            "filter_date_to": date_to_str or "",
+            "filter_date_from": date_from.isoformat() if date_from else "",
+            "filter_date_to": date_to.isoformat() if date_to else "",
+            "filter_user_search": user_search,
         },
     )
 
 
-# ─── Stato prenotazione ───────────────────────────────────────────────────────
+# ─── Stato prenotazione (HTMX: aggiorna solo la riga, filtri preservati) ──────
 
-@router.post("/prenotazioni/{appointment_id}/stato", response_class=HTMLResponse)
+@router.post("/appointments/{appointment_id}/status", response_class=HTMLResponse)
 async def update_appointment_status(
     request: Request, appointment_id: int, db: Session = Depends(get_db)
 ):
@@ -166,18 +319,36 @@ async def update_appointment_status(
     try:
         new_status = AppointmentStatus(new_status_str)
     except ValueError:
-        return RedirectResponse(url="/admin?error=stato_invalido", status_code=303)
+        return HTMLResponse(
+            '<tr><td colspan="6" class="px-4 py-3 text-red-600 text-sm">Stato non valido.</td></tr>',
+            status_code=422,
+        )
 
-    repo = AppointmentRepository(db)
-    appointment = repo.update_status(appointment_id, new_status)
+    if new_status == AppointmentStatus.completed:
+        result = BookingService(db).complete_lesson(appointment_id)
+        appointment = result["appointment"] if result["success"] else None
+    else:
+        repo = AppointmentRepository(db)
+        appointment = repo.update_status(appointment_id, new_status)
 
     if not appointment:
-        return RedirectResponse(url="/admin?error=prenotazione_non_trovata", status_code=303)
+        return HTMLResponse(
+            '<tr><td colspan="6" class="px-4 py-3 text-red-600 text-sm">Prenotazione non trovata.</td></tr>',
+            status_code=404,
+        )
 
     logger.info(
         "Admin ha aggiornato stato prenotazione id=%s a %s", appointment_id, new_status
     )
-    return RedirectResponse(url="/admin", status_code=303)
+
+    return templates.TemplateResponse(
+        request, "admin/_appointment_row.html",
+        {
+            "a": appointment,
+            "statuses": list(AppointmentStatus),
+            "csrf_token": get_csrf_token(request),
+        },
+    )
 
 
 # ─── Disponibilità ────────────────────────────────────────────────────────────
@@ -270,3 +441,106 @@ async def delete_blocked_date(
     BlockedDateRepository(db).delete(blocked_id)
     logger.info("Data bloccata eliminata: id=%s", blocked_id)
     return RedirectResponse(url="/admin#date-bloccate", status_code=303)
+
+
+@router.post("/ferie-globali", response_class=HTMLResponse)
+async def add_global_holiday(request: Request, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    form = await request.form()
+    try:
+        date_from = date.fromisoformat(form.get("date_from", ""))
+        date_to = date.fromisoformat(form.get("date_to", ""))
+        if date_to < date_from:
+            raise ValueError("La data di fine deve essere successiva o uguale a quella di inizio.")
+    except ValueError:
+        return RedirectResponse(url="/admin?error=range_non_valido#date-bloccate", status_code=303)
+
+    reason = form.get("reason", "").strip() or None
+
+    count = BlockedDateRepository(db).create_global_range(date_from, date_to, reason)
+    logger.info("Blocco ferie globale creato: %s -> %s (%s giorni)", date_from, date_to, count)
+    return RedirectResponse(url="/admin#date-bloccate", status_code=303)
+
+
+# ─── Discipline: apertura/chiusura e periodo stagionale ───────────────────────
+
+@router.post("/disciplines/{discipline_id}/toggle", response_class=HTMLResponse)
+async def toggle_discipline(request: Request, discipline_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    repo = DisciplineRepository(db)
+    discipline = repo.get_by_id(discipline_id)
+    if discipline:
+        repo.update(discipline_id, is_active=not discipline.is_active)
+        logger.info(
+            "Disciplina id=%s %s da admin", discipline_id,
+            "riattivata" if not discipline.is_active else "chiusa temporaneamente",
+        )
+    return RedirectResponse(url="/admin#discipline", status_code=303)
+
+
+@router.post("/disciplines/{discipline_id}/stagionale", response_class=HTMLResponse)
+async def set_seasonal_period(request: Request, discipline_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    form = await request.form()
+    active_from_str = form.get("active_from", "").strip()
+    active_until_str = form.get("active_until", "").strip()
+
+    try:
+        active_from = date.fromisoformat(active_from_str) if active_from_str else None
+        active_until = date.fromisoformat(active_until_str) if active_until_str else None
+    except ValueError:
+        return RedirectResponse(url="/admin?error=data_invalida#discipline", status_code=303)
+
+    DisciplineRepository(db).update(discipline_id, active_from=active_from, active_until=active_until)
+    logger.info("Periodo stagionale aggiornato per disciplina id=%s: %s -> %s", discipline_id, active_from, active_until)
+    return RedirectResponse(url="/admin#discipline", status_code=303)
+
+
+# ─── Pacchetti ──────────────────────────────────────────────────────────────────
+
+@router.post("/packages/{package_id}/renew", response_class=HTMLResponse)
+async def renew_package(request: Request, package_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    PackageRepository(db).renew(package_id)
+    logger.info("Pacchetto id=%s rinnovato da admin", package_id)
+    return RedirectResponse(url="/admin#pacchetti", status_code=303)
+
+
+@router.post("/packages/{package_id}/block", response_class=HTMLResponse)
+async def block_package(request: Request, package_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    PackageRepository(db).set_active(package_id, False)
+    logger.info("Pacchetto id=%s bloccato da admin", package_id)
+    return RedirectResponse(url="/admin#pacchetti", status_code=303)
+
+
+@router.post("/packages/{package_id}/unlock", response_class=HTMLResponse)
+async def unlock_package(request: Request, package_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    await validate_csrf(request)
+
+    PackageRepository(db).set_active(package_id, True)
+    logger.info("Pacchetto id=%s sbloccato da admin", package_id)
+    return RedirectResponse(url="/admin#pacchetti", status_code=303)

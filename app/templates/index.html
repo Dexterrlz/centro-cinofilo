@@ -25,34 +25,33 @@
   🐾🐾🐾
 </div>
 
-{# ── Discipline ────────────────────────────────────────────── #}
+{# ── Istruttori ────────────────────────────────────────────── #}
 <section id="discipline" class="section" style="background:var(--color-white);">
   <div class="page-wrapper-wide">
-    <h2 class="section-title">Scegli la disciplina</h2>
-    <p class="section-subtitle">Ogni percorso è pensato per il benessere e la felicità del tuo cane.</p>
+    <h2 class="section-title">Scegli l'istruttore</h2>
+    <p class="section-subtitle">Ogni istruttore segue discipline specifiche — scegli con chi vuoi prenotare.</p>
 
-    {% set disc_meta = {
-      'Agility':        ('🏃', 'Percorsi, ostacoli e tanto divertimento insieme.'),
-      'Dog Training 1': ('🦴', 'Educazione di base per ogni esigenza.'),
-      'Dog Training 2': ('🎯', 'Obbedienza avanzata e controllo.'),
-      'Dog Training 3': ('🎀', 'Lavoro mirato su comportamenti specifici.')
+    {% set disc_icons = {
+      'Agility': '🏃', 'Swim Dog Sport': '🏊', 'Educazione di Base': '🦴',
+      'Hoopers': '🎯', 'Rally Obedience': '🎀', 'Nosework': '👃'
     } %}
 
-    {% if disciplines %}
-    <div class="grid grid-cols-2 gap-4 sm:gap-5" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
-      {% for d in disciplines %}
-      {% set meta = disc_meta.get(d.name, ('⭐', d.description or 'Slot da 30 minuti.')) %}
-      <a href="/prenota/{{ d.id }}" class="card-discipline">
-        <span class="disc-icon">{{ meta[0] }}</span>
-        <h3>{{ d.name }}</h3>
-        <p>{{ meta[1] }}</p>
-        <span class="btn-primary" style="font-size:14px;padding:10px 22px;">Prenota</span>
+    {% if instructors %}
+    <div class="grid grid-cols-2 gap-4 sm:gap-5" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+      {% for i in instructors %}
+      <a href="/istruttore/{{ i.id }}" class="card-discipline">
+        <span class="disc-icon">👤</span>
+        <h3>{{ i.name }}</h3>
+        <p style="margin:4px 0 0;">
+          {% for d in i.disciplines if d.is_active %}{{ disc_icons.get(d.name, '⭐') }} {{ d.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+        </p>
+        <span class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:10px;">Scegli</span>
       </a>
       {% endfor %}
     </div>
     {% else %}
     <div class="card" style="padding:3rem;text-align:center;">
-      <p style="color:var(--color-muted);font-size:15px;">Nessuna disciplina disponibile al momento. Torna presto!</p>
+      <p style="color:var(--color-muted);font-size:15px;">Nessun istruttore disponibile al momento. Torna presto!</p>
     </div>
     {% endif %}
   </div>

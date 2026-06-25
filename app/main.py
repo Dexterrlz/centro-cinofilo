@@ -12,7 +12,6 @@ from slowapi.util import get_remote_address
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
-from app.database import SessionLocal
 from app.routers import admin, bookings, public
 from app.routers import auth as auth_router
 from app.routers import profile as profile_router
@@ -32,36 +31,12 @@ register_date_filters(templates)
 
 
 def _seed_initial_data():
-    """Popola i dati iniziali al primo avvio (discipline e admin)."""
-    db = SessionLocal()
+    """Popola istruttori e discipline al primo avvio (vedi app/utils/seed.py)."""
     try:
-        from app.repositories.discipline_repository import DisciplineRepository
-        from app.services.admin_service import AdminService
-
-        disc_repo = DisciplineRepository(db)
-        if disc_repo.count() == 0:
-            initial_disciplines = [
-                ("Agility", "Percorso ad ostacoli per cane e conduttore", "#F59E0B"),
-                ("Dog Training 1", "Addestramento base", "#3B82F6"),
-                ("Dog Training 2", "Addestramento intermedio", "#8B5CF6"),
-                ("Dog Training 3", "Addestramento avanzato", "#10B981"),
-            ]
-            for name, desc, color in initial_disciplines:
-                disc_repo.create(name=name, description=desc, color=color)
-            logger.info("Discipline iniziali create.")
-
-        admin_service = AdminService(db)
-        if settings.ADMIN_INITIAL_PASSWORD and not admin_service.admin_exists():
-            admin_service.create_admin(
-                username=settings.ADMIN_INITIAL_USERNAME or "admin",
-                password=settings.ADMIN_INITIAL_PASSWORD,
-            )
-            logger.info("Admin iniziale creato: username='%s'", settings.ADMIN_INITIAL_USERNAME)
-
+        from app.utils.seed import seed_initial_data
+        seed_initial_data()
     except Exception as exc:
         logger.error("Errore seed dati iniziali: %s", exc)
-    finally:
-        db.close()
 
 
 @asynccontextmanager

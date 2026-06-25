@@ -2,7 +2,7 @@
 {% block title %}Scegli orario — {{ discipline.name }}{% endblock %}
 
 {% block nav_extra %}
-<a href="/" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
+<a href="/istruttore/{{ discipline.instructor_id }}" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
   <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
   Indietro
 </a>
@@ -15,69 +15,89 @@
   <nav class="breadcrumb">
     <a href="/">Home</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">{{ discipline.name }}</span>
+    {% if discipline.instructor %}
+    <a href="/istruttore/{{ discipline.instructor_id }}">{{ discipline.instructor.name }}</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">Scegli slot</span>
+    {% endif %}
+    <span class="breadcrumb-current">{{ discipline.name }}</span>
   </nav>
 
   {# ── Intestazione disciplina ─────────────────────────── #}
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.75rem;">
     <div style="width:48px;height:48px;border-radius:14px;background:var(--color-cream-dark);border:1.5px solid var(--color-cipria);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
-      {% set icons = {'Agility':'🏃','Dog Training 1':'🦴','Dog Training 2':'🎯','Dog Training 3':'🎀'} %}
+      {% set icons = {'Agility':'🏃','Swim Dog Sport':'🏊','Educazione di Base':'🦴','Hoopers':'🎯','Rally Obedience':'🎀','Nosework':'👃'} %}
       {{ icons.get(discipline.name, '⭐') }}
     </div>
     <div>
       <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
-        {{ discipline.name }}
+        {{ discipline.name }}{% if discipline.instructor %} <span style="color:var(--color-muted);font-weight:400;">con {{ discipline.instructor.name }}</span>{% endif %}
       </h1>
-      <p style="color:var(--color-muted);font-size:13px;margin:0;">Slot da 30 minuti · Max 30 giorni in anticipo</p>
+      <p style="color:var(--color-muted);font-size:13px;margin:0;">Slot da {{ discipline.slot_duration_minutes or 30 }} minuti</p>
     </div>
   </div>
+
+  {% if package_exhausted %}
+
+  {# ── Pacchetto esaurito ───────────────────────────────── #}
+  <div class="card" style="padding:3rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+      Pacchetto esaurito
+    </h2>
+    <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
+      Hai completato tutte le lezioni del tuo pacchetto per questa disciplina.
+      Contatta il centro per rinnovarlo e continuare a prenotare.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+      <a href="mailto:asdiamocilazampa@libero.it" class="btn-secondary" style="display:inline-flex;">
+        ✉️ Contattaci
+      </a>
+      <a href="https://wa.me/393333285654" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex;">
+        💬 WhatsApp
+      </a>
+    </div>
+  </div>
+
+  {% else %}
 
   {# ── Errore disponibilità ─────────────────────────────── #}
   {% if error %}
   <div class="alert alert-error">{{ error }}</div>
   {% endif %}
 
-  {% if available_dates %}
+  {% if has_availability %}
 
-  {# ── Selezione data ───────────────────────────────────── #}
-  <div style="margin-bottom:2rem;">
+  {# ── Range picker ─────────────────────────────────────── #}
+  <div class="date-range-picker" style="margin-bottom:2rem;">
     <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin-bottom:0.85rem;">
-      Scegli una data
+      Scegli un intervallo di date
     </p>
-
-    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;-ms-overflow-style:none;scrollbar-width:none;" id="date-list">
-      {% set prev_month = namespace(val='') %}
-      {% for d in available_dates %}
-        {% set this_month = d | it_date('%b %Y') %}
-        {% if this_month != prev_month.val %}
-          {% if not loop.first %}
-          <div style="width:1px;background:var(--color-cipria);flex-shrink:0;margin:8px 4px;border-radius:1px;"></div>
-          {% endif %}
-          {% set prev_month.val = this_month %}
-        {% endif %}
-        <button
-          type="button"
-          class="date-chip"
-          id="chip-{{ d.isoformat() }}"
-          hx-post="/prenota/slots"
-          hx-target="#slot-grid"
-          hx-swap="innerHTML"
-          hx-indicator="#slot-spinner"
-          hx-vals='{"discipline_id": "{{ discipline.id }}", "date": "{{ d.isoformat() }}"}'
-          onclick="activateChip(this)"
-          data-date="{{ d.isoformat() }}"
-        >
-          <span class="chip-day">{{ d | it_date('%a') }}</span>
-          <span class="chip-num">{{ d.strftime('%d') }}</span>
-          <span class="chip-mon">{{ d | it_date('%b') }}</span>
-        </button>
-      {% endfor %}
+    <div class="date-range-inputs">
+      <div class="date-input">
+        <label>Dal</label>
+        <input type="date" id="date-from"
+          min="{{ min_date.isoformat() }}" max="{{ max_date.isoformat() }}"
+          value="{{ min_date.isoformat() }}">
+      </div>
+      <span class="date-range-arrow">→</span>
+      <div class="date-input">
+        <label>Al</label>
+        <input type="date" id="date-to"
+          min="{{ min_date.isoformat() }}" max="{{ max_date.isoformat() }}"
+          value="{{ min_date.isoformat() }}">
+      </div>
     </div>
+    <div class="quick-select">
+      <button type="button" onclick="selectWeek(1)">Questa settimana</button>
+      <button type="button" onclick="selectWeek(2)">Prossima settimana</button>
+      <button type="button" onclick="selectAll()">Entrambe le settimane</button>
+    </div>
+    <button type="button" id="search-slots-btn" class="btn-primary" style="width:100%;margin-top:14px;font-size:15px;">
+      Cerca slot disponibili
+    </button>
   </div>
 
-  {# ── Griglia slot ─────────────────────────────────────── #}
+  {# ── Lista slot ───────────────────────────────────────── #}
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
       <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin:0;">
@@ -90,7 +110,7 @@
 
     <div id="slot-grid" class="card" style="padding:2.5rem;text-align:center;">
       <p style="color:var(--color-muted);font-size:14px;margin:0;">
-        Seleziona una data per vedere gli orari disponibili.
+        Scegli un intervallo e premi "Cerca slot disponibili".
       </p>
     </div>
   </div>
@@ -103,8 +123,8 @@
       Nessuno slot disponibile
     </h2>
     <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
-      Non ci sono slot disponibili nei prossimi 30 giorni per questa disciplina.
-      Prova a tornare domani o contattaci direttamente.
+      Non ci sono slot disponibili nelle prossime 2 settimane per questa disciplina.
+      Prova a tornare più tardi o contattaci direttamente.
     </p>
     <a href="mailto:asdiamocilazampa@libero.it" class="btn-secondary" style="display:inline-flex;">
       ✉️ Contattaci
@@ -112,15 +132,61 @@
   </div>
 
   {% endif %}
+  {% endif %}
 
 </div>
 
+{% if has_availability and not package_exhausted %}
 <script>
-function activateChip(el) {
-  document.querySelectorAll('.date-chip').forEach(function(c) {
-    c.classList.remove('active');
-  });
-  el.classList.add('active');
-}
+(function() {
+  var dateFrom = document.getElementById('date-from');
+  var dateTo = document.getElementById('date-to');
+  var searchBtn = document.getElementById('search-slots-btn');
+  var minDate = '{{ min_date.isoformat() }}';
+  var maxDate = '{{ max_date.isoformat() }}';
+
+  function clamp(iso) {
+    if (iso < minDate) return minDate;
+    if (iso > maxDate) return maxDate;
+    return iso;
+  }
+
+  function addDays(iso, days) {
+    var d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  window.selectWeek = function(n) {
+    var weekStart = addDays(minDate, (n - 1) * 7);
+    var weekEnd = addDays(minDate, n * 7 - 1);
+    dateFrom.value = clamp(weekStart);
+    dateTo.value = clamp(weekEnd);
+    fetchSlots();
+  };
+
+  window.selectAll = function() {
+    dateFrom.value = minDate;
+    dateTo.value = maxDate;
+    fetchSlots();
+  };
+
+  function fetchSlots() {
+    if (dateTo.value < dateFrom.value) { dateTo.value = dateFrom.value; }
+    htmx.ajax('POST', '/prenota/slots', {
+      target: '#slot-grid',
+      swap: 'innerHTML',
+      values: {
+        discipline_id: '{{ discipline.id }}',
+        date_from: dateFrom.value,
+        date_to: dateTo.value,
+      },
+      indicator: '#slot-spinner',
+    });
+  }
+
+  searchBtn.addEventListener('click', fetchSlots);
+})();
 </script>
+{% endif %}
 {% endblock %}

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.discipline import Discipline
 
 
@@ -8,7 +8,23 @@ class DisciplineRepository:
         self.db = db
 
     def get_all_active(self) -> List[Discipline]:
-        return self.db.query(Discipline).filter(Discipline.is_active == True).all()
+        return (
+            self.db.query(Discipline)
+            .options(joinedload(Discipline.instructor))
+            .filter(Discipline.is_active == True, Discipline.instructor_id.isnot(None))
+            .all()
+        )
+
+    def get_all_manageable(self) -> List[Discipline]:
+        """Tutte le discipline reali (con istruttore), attive o chiuse temporaneamente.
+        Usato nella tab admin 'Discipline' per poter riattivare quelle chiuse."""
+        return (
+            self.db.query(Discipline)
+            .options(joinedload(Discipline.instructor))
+            .filter(Discipline.instructor_id.isnot(None))
+            .order_by(Discipline.name)
+            .all()
+        )
 
     def get_all(self) -> List[Discipline]:
         return self.db.query(Discipline).all()

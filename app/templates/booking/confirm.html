@@ -39,8 +39,14 @@
     <div class="summary-card" style="margin-bottom:1rem;">
       <div class="summary-row">
         <span class="summary-label">Disciplina</span>
-        <span class="summary-value">{{ discipline.name }}</span>
+        <span class="summary-value">{{ discipline.name }}{% if discipline.instructor %} con {{ discipline.instructor.name }}{% endif %}</span>
       </div>
+      {% if discipline.instructor %}
+      <div class="summary-row">
+        <span class="summary-label">Istruttore</span>
+        <span class="summary-value">{{ discipline.instructor.name }}</span>
+      </div>
+      {% endif %}
       <div class="summary-row">
         <span class="summary-label">Data</span>
         <span class="summary-value">{{ appointment_date | it_date('%A %d %B %Y') }}</span>
@@ -51,7 +57,7 @@
       </div>
       <div class="summary-row">
         <span class="summary-label">Durata</span>
-        <span class="summary-value">30 minuti</span>
+        <span class="summary-value">{{ discipline.slot_duration_minutes or 30 }} minuti</span>
       </div>
     </div>
   </div>

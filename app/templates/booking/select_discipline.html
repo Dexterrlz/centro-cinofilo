@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Scegli disciplina — {{ instructor.name }} — ASD Diamoci la Zampa{% endblock %}
+
+{% block nav_extra %}
+<a href="/" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+  Indietro
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
+
+  {# ── Breadcrumb ─────────────────────────────────────── #}
+  <nav class="breadcrumb">
+    <a href="/">Home</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ instructor.name }}</span>
+  </nav>
+
+  <div style="margin-bottom:1.75rem;">
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
+      Discipline di {{ instructor.name }}
+    </h1>
+    <p style="color:var(--color-muted);font-size:13px;margin:0;">Scegli la disciplina da prenotare.</p>
+  </div>
+
+  {% set disc_icons = {
+    'Agility': '🏃', 'Swim Dog Sport': '🏊', 'Educazione di Base': '🦴',
+    'Hoopers': '🎯', 'Rally Obedience': '🎀', 'Nosework': '👃'
+  } %}
+
+  {% if disciplines %}
+  <div class="grid grid-cols-2 gap-4 sm:gap-5" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+    {% for item in disciplines %}
+    {% set d = item.discipline %}
+    {% if item.status == 'exhausted' %}
+    <div class="card-discipline" style="opacity:0.65;cursor:not-allowed;">
+      <span class="disc-icon">{{ disc_icons.get(d.name, '⭐') }}</span>
+      <h3>{{ d.name }}</h3>
+      <span class="badge badge-terra" style="margin-top:8px;">⚠️ Pacchetto esaurito</span>
+      <p style="font-size:12px;color:var(--color-muted);margin-top:6px;margin-bottom:0;">Contatta il centro per rinnovare</p>
+    </div>
+    {% else %}
+    <a href="/prenota/{{ d.id }}" class="card-discipline">
+      <span class="disc-icon">{{ disc_icons.get(d.name, '⭐') }}</span>
+      <h3>{{ d.name }}</h3>
+      {% if item.status == 'active' %}
+      <span class="badge badge-salvia" style="margin-top:8px;">Pacchetto attivo: {{ item.package.lessons_completed }}/{{ item.package.total_lessons }}</span>
+      {% endif %}
+      <span class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:10px;">Prenota</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="padding:3rem;text-align:center;">
+    <p style="color:var(--color-muted);font-size:15px;">Nessuna disciplina disponibile per questo istruttore al momento.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

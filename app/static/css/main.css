@@ -387,28 +387,115 @@ h1, h2, h3, .font-display {
 
 /* ── Slot buttons ──────────────────────────────────────────── */
 .slot-btn {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   background: var(--color-white);
   border: 1.5px solid var(--color-cipria);
   border-radius: 12px;
-  padding: 12px 8px;
+  padding: 10px 8px;
   font-family: 'Nunito', sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: var(--color-choco);
   text-decoration: none;
   transition: all 0.15s;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 52px;
+  box-sizing: border-box;
 }
 .slot-btn:hover {
   border-color: var(--color-terracotta);
   background: var(--color-cream-dark);
   color: var(--color-terra-dark);
   transform: scale(1.02);
+}
+.slot-btn.slot-suggested {
+  background: #E8F5E9;
+  border: 2px solid #4CAF50;
+  color: var(--color-choco);
+}
+.slot-btn.slot-suggested:hover {
+  background: #E0F2E1;
+  border-color: #2E7D32;
+}
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+.slot-btn .slot-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2E7D32;
+  animation: pulse-text 1.5s ease-in-out infinite;
+  display: block;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ── Range picker ──────────────────────────────────────────── */
+.date-range-picker {
+  background: var(--color-white);
+  border: 1.5px solid var(--color-cipria);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.date-input { flex: 1; min-width: 130px; }
+.date-input label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+.date-input input[type="date"] {
+  width: 100%;
+  border: 1.5px solid var(--color-cipria);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  color: var(--color-choco);
+  box-sizing: border-box;
+}
+.date-input input[type="date"]:focus {
+  outline: none;
+  border-color: var(--color-terracotta);
+}
+.date-range-arrow {
+  color: var(--color-muted);
+  font-size: 18px;
+  padding-top: 18px;
+}
+.quick-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.quick-select button {
+  background: var(--color-cream-dark);
+  border: 1px solid var(--color-cipria);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-choco);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quick-select button:hover {
+  background: var(--color-terracotta);
+  border-color: var(--color-terracotta);
+  color: white;
 }
 
 /* ── Alerts ────────────────────────────────────────────────── */
@@ -767,6 +854,11 @@ h1, h2, h3, .font-display {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.booking-card-instructor {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin: 0 0 3px;
 }
 .booking-card-meta {
   font-size: 13px;

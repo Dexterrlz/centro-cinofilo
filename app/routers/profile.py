@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.appointment import AppointmentStatus
 from app.models.user import User
 from app.repositories.appointment_repository import AppointmentRepository
+from app.repositories.package_repository import PackageRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.utils.auth import require_auth
@@ -24,9 +25,10 @@ register_date_filters(templates)
 
 @router.get("", response_class=HTMLResponse)
 async def profile_page(request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)):
+    packages = PackageRepository(db).get_all_for_user(user.id)
     return templates.TemplateResponse(
         request, "profile/index.html",
-        {"current_user": user, "csrf_token": get_csrf_token(request)},
+        {"current_user": user, "csrf_token": get_csrf_token(request), "packages": packages},
     )
 
 

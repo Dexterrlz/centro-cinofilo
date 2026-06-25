@@ -13,5 +13,7 @@ class BlockedDate(Base):
     reason = Column(String(200), nullable=True)
     # Se True ignora discipline_id e blocca tutto
     all_disciplines = Column(Boolean, default=False, nullable=False)
+    # True = blocco ferie di tutto il centro (tutte le discipline)
+    is_global = Column(Boolean, default=False, nullable=False)
 
     discipline = relationship("Discipline")

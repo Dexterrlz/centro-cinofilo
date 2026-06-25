@@ -96,6 +96,42 @@
     </form>
   </div>
 
+  {# ── I miei pacchetti ──────────────────────────────────────── #}
+  {% if packages %}
+  <div class="card" style="padding:1.75rem;margin-bottom:1rem;">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
+      I miei pacchetti
+    </h3>
+
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+      {% for p in packages %}
+      {% set pct = ((p.lessons_completed / p.total_lessons) * 100) if p.total_lessons else 0 %}
+      {% set exhausted = not p.is_active or p.lessons_completed >= p.total_lessons %}
+      <div>
+        <p style="font-size:14px;font-weight:600;color:var(--color-choco);margin:0 0 6px;">
+          {{ p.discipline.name }}{% if p.instructor %} con {{ p.instructor.name }}{% endif %}
+        </p>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;height:8px;background:var(--color-cream-dark);border-radius:6px;overflow:hidden;">
+            <div style="height:100%;width:{{ pct }}%;background:{{ 'var(--color-terra-dark)' if exhausted else 'var(--color-salvia)' }};border-radius:6px;"></div>
+          </div>
+          <span style="font-size:13px;color:var(--color-muted);white-space:nowrap;">{{ p.lessons_completed }} di {{ p.total_lessons }}</span>
+        </div>
+        {% if exhausted %}
+        <p style="font-size:13px;color:var(--color-terra-dark);margin:6px 0 0;font-weight:600;">
+          ⚠️ Pacchetto esaurito — contatta il centro per rinnovare
+        </p>
+        {% else %}
+        <p style="font-size:13px;color:var(--color-muted);margin:6px 0 0;">
+          {{ p.total_lessons - p.lessons_completed }} lezion{{ 'e' if (p.total_lessons - p.lessons_completed) == 1 else 'i' }} rimanent{{ 'e' if (p.total_lessons - p.lessons_completed) == 1 else 'i' }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {# ── Link cambio password ─────────────────────────────────── #}
   <div style="text-align:center;padding-top:0.5rem;">
     <a href="/profile/change-password" style="font-size:14px;color:var(--color-terracotta);font-weight:600;text-decoration:none;">

@@ -2,6 +2,7 @@ from datetime import time
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.models.availability_rule import AvailabilityRule
+from app.models.discipline import Discipline
 
 
 class AvailabilityRuleRepository:
@@ -33,7 +34,9 @@ class AvailabilityRuleRepository:
     def get_all(self) -> List[AvailabilityRule]:
         return (
             self.db.query(AvailabilityRule)
-            .options(joinedload(AvailabilityRule.discipline))
+            .join(Discipline)
+            .options(joinedload(AvailabilityRule.discipline).joinedload(Discipline.instructor))
+            .filter(Discipline.is_active == True, Discipline.instructor_id.isnot(None))
             .order_by(AvailabilityRule.discipline_id, AvailabilityRule.day_of_week)
             .all()
         )
