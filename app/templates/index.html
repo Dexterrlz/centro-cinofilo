@@ -5,7 +5,12 @@
 
 {# ── Hero ──────────────────────────────────────────────────── #}
 <section class="hero-section" style="padding-top:3.5rem;padding-bottom:2.5rem;">
-  <p style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-terracotta);margin-bottom:1rem;">
+  <div class="hero-logo">
+    <img src="{{ url_for('static', path='img/logo/logo-diamoci.png') }}"
+         alt="ASD Diamoci la Zampa"
+         style="height:180px;width:auto;background:white;border-radius:16px;padding:12px 16px;">
+  </div>
+  <p style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-terracotta);margin-bottom:1rem;">
     Centro Cinofilo · Cercola (NA)
   </p>
   <h1 class="hero-title">

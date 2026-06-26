@@ -9,7 +9,7 @@ from app.repositories.appointment_repository import AppointmentRepository
 from app.repositories.discipline_repository import DisciplineRepository
 from app.repositories.package_repository import PackageRepository
 from app.repositories.user_repository import UserRepository
-from app.models.appointment import AppointmentStatus
+from app.models.appointment import Appointment, AppointmentStatus
 from app.services.availability_service import (
     AvailabilityService,
     MIN_ADVANCE_HOURS,
@@ -197,22 +197,32 @@ class BookingService:
         return {"success": True, "appointment": appointment}
 
     def complete_lesson(self, appointment_id: int) -> dict:
-        """Segna una lezione come completata e scala il contatore del pacchetto associato.
-        Il contatore avanza SOLO qui, mai alla prenotazione."""
+        """Segna una lezione come completata e ricalcola il contatore del pacchetto dal DB.
+        Usa COUNT(*) invece di +=1 per essere idempotente anche dopo un renew."""
         appointment = self.appointment_repo.get_by_id(appointment_id)
         if not appointment:
             return {"success": False, "message": "Prenotazione non trovata."}
 
-        if appointment.status == AppointmentStatus.completed:
-            return {"success": True, "appointment": appointment}
-
+        was_already_completed = appointment.status == AppointmentStatus.completed
         appointment.status = AppointmentStatus.completed
 
         if appointment.package_id:
             package = self.package_repo.get_by_id(appointment.package_id)
             if package:
-                package.lessons_completed += 1
-                if package.lessons_completed >= package.total_lessons:
+                # Conta le lezioni già completate PER questo pacchetto (esclusa quella corrente)
+                prev_completed = (
+                    self.db.query(Appointment)
+                    .filter(
+                        Appointment.package_id == package.id,
+                        Appointment.status == AppointmentStatus.completed,
+                        Appointment.id != appointment_id,
+                    )
+                    .count()
+                )
+                new_count = prev_completed + 1  # +1 per questa lezione
+                package.lessons_completed = new_count
+
+                if new_count >= package.total_lessons and not was_already_completed:
                     package.is_active = False
                     EmailService.send_package_exhausted_notice(
                         email=appointment.user.email,
@@ -223,6 +233,7 @@ class BookingService:
         self.db.commit()
         self.db.refresh(appointment)
 
-        logger.info("Lezione completata: appointment_id=%s", appointment_id)
+        if not was_already_completed:
+            logger.info("Lezione completata: appointment_id=%s", appointment_id)
 
         return {"success": True, "appointment": appointment}

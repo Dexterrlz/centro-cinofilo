@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;max-width:520px;">
 
-  <h1 style="font-family:'Playfair Display',serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin-bottom:1.75rem;">
+  <h1 style="font-family:'Poppins',sans-serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin-bottom:1.75rem;">
     Il mio profilo
   </h1>
 
@@ -15,7 +15,7 @@
         {{ (current_user.first_name or 'U')[0] | upper }}{{ (current_user.last_name or 'X')[0] | upper }}
       </div>
       <div style="min-width:0;">
-        <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin:0 0 4px;font-weight:600;">
+        <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;color:var(--color-choco);margin:0 0 4px;font-weight:600;">
           {{ current_user.first_name }} {{ current_user.last_name }}
         </h2>
         <p style="font-size:13px;color:var(--color-muted);margin:0;">{{ current_user.email }}</p>
@@ -42,7 +42,7 @@
 
   {# ── Form modifica ──────────────────────────────────────── #}
   <div class="card" style="padding:1.75rem;margin-bottom:1rem;">
-    <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
+    <h3 style="font-family:'Poppins',sans-serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
       Modifica dati
     </h3>
 
@@ -99,7 +99,7 @@
   {# ── I miei pacchetti ──────────────────────────────────────── #}
   {% if packages %}
   <div class="card" style="padding:1.75rem;margin-bottom:1rem;">
-    <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
+    <h3 style="font-family:'Poppins',sans-serif;font-size:1.1rem;color:var(--color-choco);margin:0 0 1.25rem;font-weight:600;">
       I miei pacchetti
     </h3>
 

@@ -75,12 +75,15 @@ async def bookings_page(request: Request, user: User = Depends(require_auth), db
     past_raw = repo.get_appointments_by_user(user.id, [AppointmentStatus.completed])
     past = sorted(past_raw, key=lambda x: (x.appointment_date, x.start_time), reverse=True)
 
+    packages = PackageRepository(db).get_all_for_user(user.id)
+
     return templates.TemplateResponse(
         request, "profile/bookings.html",
         {
             "current_user": user,
             "upcoming": upcoming,
             "past": past,
+            "packages": packages,
             "csrf_token": get_csrf_token(request),
         },
     )

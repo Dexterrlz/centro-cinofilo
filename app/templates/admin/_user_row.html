@@ -1,0 +1,50 @@
+{% set is_pending = not u.is_active and u.approved_at is none %}
+{% set is_disabled = not u.is_active and u.approved_at is not none %}
+{% set stato_key = 'pending' if is_pending else ('disabled' if is_disabled else 'active') %}
+{% set search_str = (u.first_name ~ ' ' ~ u.last_name ~ ' ' ~ u.email ~ ' ' ~ u.phone)|lower %}
+<tr data-stato="{{ stato_key }}" data-search="{{ search_str }}" id="user-row-{{ u.id }}"
+    class="hover:bg-gray-50 transition-colors">
+  <td class="px-4 py-3">
+    <div class="font-medium text-gray-900">{{ u.first_name }} {{ u.last_name }}</div>
+    {% if u.dog_name %}
+    <div class="text-xs text-gray-400">🐾 {{ u.dog_name }}</div>
+    {% endif %}
+  </td>
+  <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ u.phone }}</td>
+  <td class="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">{{ u.email }}</td>
+  <td class="px-4 py-3 text-gray-500 text-xs hidden sm:table-cell whitespace-nowrap">
+    {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else '—' }}
+  </td>
+  <td class="px-4 py-3">
+    {% if is_pending %}
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+      ⏳ In attesa
+    </span>
+    {% elif is_disabled %}
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+      🔴 Disabilitato
+    </span>
+    {% else %}
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+      ✅ Abilitato
+    </span>
+    {% endif %}
+  </td>
+  <td class="px-4 py-3 text-right">
+    <form hx-post="/admin/users/{{ u.id }}/toggle"
+          hx-target="#user-row-{{ u.id }}"
+          hx-swap="outerHTML"
+          hx-include="[name='csrf_token']">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit"
+        class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors
+        {% if u.is_active %}
+          bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700
+        {% else %}
+          bg-[#E8621A] text-white hover:bg-[#CC5215]
+        {% endif %}">
+        {{ "Disabilita" if u.is_active else "Abilita" }}
+      </button>
+    </form>
+  </td>
+</tr>

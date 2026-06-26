@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Registrazione completata — ASD Diamoci la Zampa{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="login-page">
+  <div class="login-logo-wrapper">
+    <img src="{{ url_for('static', path='img/logo/logo-diamoci.png') }}"
+         alt="ASD Diamoci la Zampa"
+         class="login-logo">
+  </div>
+
+  <div class="login-card" style="text-align:center;max-width:460px;">
+    <div style="font-size:3rem;margin-bottom:1rem;">⏳</div>
+    <h1 style="font-family:'Poppins',sans-serif;font-size:1.5rem;color:var(--color-choco);margin-bottom:0.75rem;font-weight:600;">
+      Registrazione completata!
+    </h1>
+    <p style="color:var(--color-text-secondary);font-size:15px;margin-bottom:1.5rem;line-height:1.6;">
+      Il tuo account è stato creato ed è in attesa di approvazione da parte dello staff.
+    </p>
+
+    <div style="background:var(--color-bg-page);border:1.5px solid var(--color-border);border-radius:12px;padding:1.25rem;margin-bottom:1.75rem;text-align:left;">
+      <p style="margin:0 0 0.6rem;font-size:14px;color:var(--color-text-secondary);">
+        📞 Ti contatteremo al numero
+        {% if phone %}<strong style="color:var(--color-choco);">{{ phone }}</strong>{% else %}che hai fornito{% endif %}
+        per confermare l'accesso alla piattaforma.
+      </p>
+      <p style="margin:0;font-size:14px;color:var(--color-text-secondary);">
+        Una volta approvato potrai accedere con le tue credenziali.
+      </p>
+    </div>
+
+    <a href="/login" class="btn-primary" style="display:inline-block;width:100%;text-align:center;">
+      Torna al login
+    </a>
+  </div>
+</div>
+{% endblock %}

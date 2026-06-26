@@ -16,6 +16,7 @@ from app.repositories.blocked_date_repository import BlockedDateRepository
 from app.repositories.discipline_repository import DisciplineRepository
 from app.repositories.instructor_repository import InstructorRepository
 from app.repositories.package_repository import PackageRepository
+from app.repositories.user_repository import UserRepository
 from app.services.admin_service import AdminService
 from app.services.booking_service import BookingService
 from app.utils.csrf import get_csrf_token, validate_csrf
@@ -544,3 +545,50 @@ async def unlock_package(request: Request, package_id: int, db: Session = Depend
     PackageRepository(db).set_active(package_id, True)
     logger.info("Pacchetto id=%s sbloccato da admin", package_id)
     return RedirectResponse(url="/admin#pacchetti", status_code=303)
+
+
+# ─── Utenti ────────────────────────────────────────────────────────────────────
+
+@router.get("/users", response_class=HTMLResponse)
+async def admin_users(request: Request, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+
+    users = UserRepository(db).get_all_with_packages()
+    return templates.TemplateResponse(
+        request, "admin/users.html",
+        {
+            "admin_username": _require_admin(request),
+            "current_instructor": _current_instructor(request, db),
+            "users": users,
+            "csrf_token": get_csrf_token(request),
+        },
+    )
+
+
+@router.post("/users/{user_id}/toggle", response_class=HTMLResponse)
+async def toggle_user(request: Request, user_id: int, db: Session = Depends(get_db)):
+    if not _require_admin(request):
+        return HTMLResponse("Non autorizzato.", status_code=401)
+
+    await validate_csrf(request)
+
+    repo = UserRepository(db)
+    user = repo.get_by_id_any(user_id)
+    if not user:
+        return HTMLResponse("Utente non trovato.", status_code=404)
+
+    if user.is_active:
+        repo.disable(user)
+        logger.info("Admin ha disabilitato user_id=%s", user_id)
+    else:
+        repo.approve(user)
+        logger.info("Admin ha abilitato user_id=%s", user_id)
+
+    return templates.TemplateResponse(
+        request, "admin/_user_row.html",
+        {
+            "u": user,
+            "csrf_token": get_csrf_token(request),
+        },
+    )

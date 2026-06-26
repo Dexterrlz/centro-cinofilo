@@ -7,7 +7,6 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import get_db
 from app.services.auth_service import AuthService
 from app.utils.auth import get_current_user
@@ -57,7 +56,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
             {
                 "csrf_token": get_csrf_token(request),
                 "error": result["message"],
-                "unverified": result.get("unverified", False),
+                "pending": result.get("pending", False),
                 "current_user": None,
             },
             status_code=401,
@@ -89,6 +88,7 @@ async def register(request: Request, db: Session = Depends(get_db)):
     first_name = form.get("first_name", "").strip()
     last_name = form.get("last_name", "").strip()
     email = form.get("email", "").strip().lower()
+    phone = form.get("phone", "").strip()
     password = form.get("password", "")
     password_confirm = form.get("password_confirm", "")
     dog_name = form.get("dog_name", "").strip() or None
@@ -96,11 +96,13 @@ async def register(request: Request, db: Session = Depends(get_db)):
 
     errors = []
     if not first_name:
-        errors.append("Il nome e obbligatorio.")
+        errors.append("Il nome è obbligatorio.")
     if not last_name:
-        errors.append("Il cognome e obbligatorio.")
+        errors.append("Il cognome è obbligatorio.")
     if not email or "@" not in email:
         errors.append("Inserisci un indirizzo email valido.")
+    if not phone:
+        errors.append("Il numero di telefono è obbligatorio.")
     if len(password) < 8:
         errors.append("La password deve essere di almeno 8 caratteri.")
     if not any(c.isdigit() for c in password):
@@ -122,7 +124,7 @@ async def register(request: Request, db: Session = Depends(get_db)):
             status_code=422,
         )
 
-    result = AuthService(db).register_user(first_name, last_name, email, password, dog_name)
+    result = AuthService(db).register_user(first_name, last_name, email, phone, password, dog_name)
     if not result["success"]:
         return templates.TemplateResponse(
             request, "auth/register.html",
@@ -135,68 +137,16 @@ async def register(request: Request, db: Session = Depends(get_db)):
             status_code=422,
         )
 
-    return RedirectResponse(url="/verify-pending", status_code=303)
+    return RedirectResponse(url=f"/register/pending?phone={phone}", status_code=303)
 
 
-# ─── Verifica email ───────────────────────────────────────────────────────────
-
-@router.get("/verify-pending", response_class=HTMLResponse)
-async def verify_pending_page(request: Request):
+@router.get("/register/pending", response_class=HTMLResponse)
+async def register_pending_page(request: Request):
+    phone = request.query_params.get("phone", "")
     return templates.TemplateResponse(
-        request, "auth/verify_pending.html",
-        {"current_user": None},
+        request, "auth/register_pending.html",
+        {"current_user": None, "phone": phone},
     )
-
-
-@router.get("/verify-email/{token}", response_class=HTMLResponse)
-async def verify_email(request: Request, token: str, db: Session = Depends(get_db)):
-    result = AuthService(db).verify_email(token)
-    if not result["success"]:
-        return templates.TemplateResponse(
-            request, "auth/verify_pending.html",
-            {"error": result["message"], "current_user": None},
-            status_code=400,
-        )
-    return templates.TemplateResponse(
-        request, "auth/verify_success.html",
-        {"already_verified": result.get("already_verified", False), "current_user": None},
-    )
-
-
-# ─── Google OAuth ─────────────────────────────────────────────────────────────
-
-@router.get("/auth/google", response_class=HTMLResponse)
-async def google_login(request: Request):
-    if not settings.GOOGLE_CLIENT_ID:
-        return RedirectResponse(url="/login?error=google_non_configurato", status_code=302)
-    from app.utils.oauth import oauth
-    redirect_uri = settings.GOOGLE_REDIRECT_URI
-    return await oauth.google.authorize_redirect(request, redirect_uri)
-
-
-@router.get("/auth/google/callback")
-async def google_callback(request: Request, db: Session = Depends(get_db)):
-    if not settings.GOOGLE_CLIENT_ID:
-        return RedirectResponse(url="/login?error=google_non_configurato", status_code=302)
-    try:
-        from app.utils.oauth import oauth
-        token = await oauth.google.authorize_access_token(request)
-        userinfo = token.get("userinfo") or {}
-        google_id = userinfo.get("sub")
-        email = userinfo.get("email")
-        first_name = userinfo.get("given_name") or userinfo.get("name", "Utente")
-        last_name = userinfo.get("family_name") or ""
-
-        if not google_id or not email:
-            return RedirectResponse(url="/login?error=google_dati_mancanti", status_code=302)
-
-        user = AuthService(db).get_or_create_google_user(google_id, email, first_name, last_name)
-        request.session["user_id"] = user.id
-        logger.info("Login Google per user_id=%s", user.id)
-        return RedirectResponse(url="/", status_code=302)
-    except Exception as exc:
-        logger.error("Errore Google OAuth: %s", exc)
-        return RedirectResponse(url="/login?error=google_errore", status_code=302)
 
 
 # ─── Logout ───────────────────────────────────────────────────────────────────

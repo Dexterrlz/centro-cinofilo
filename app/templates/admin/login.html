@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#E8621A">
   <title>Area Amministrativa — Diamoci la Zampa</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Nunito', system-ui, sans-serif; background: #f4f5f7; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F5F5F5; }
     .form-input {
-      border: 1.5px solid #d1d5db;
+      border: 1.5px solid #E0E0E0;
       border-radius: 10px;
       padding: 12px 16px;
       width: 100%;
-      font-family: 'Nunito', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-size: 15px;
-      color: #1f2937;
+      color: #1C1C1E;
       background: white;
       box-sizing: border-box;
       transition: border-color 0.2s;
     }
-    .form-input:focus { outline: none; border-color: #374151; box-shadow: 0 0 0 3px rgba(55,65,81,0.1); }
+    .form-input:focus { outline: none; border-color: #E8621A; box-shadow: 0 0 0 3px rgba(232,98,26,0.12); }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-4 py-8">
@@ -29,23 +30,23 @@
   <div style="width:100%;max-width:380px;">
 
     <div style="text-align:center;margin-bottom:2rem;">
-      <div style="width:48px;height:48px;background:#1f2937;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:20px;">
-        🔒
-      </div>
-      <h1 style="font-size:1.25rem;font-weight:700;color:#1f2937;margin-bottom:4px;">Area Amministrativa</h1>
-      <p style="font-size:13px;color:#6b7280;">Accedi con le tue credenziali di amministratore</p>
+      <img src="{{ url_for('static', path='img/logo/logo-diamoci.png') }}"
+           alt="ASD Diamoci la Zampa"
+           style="height:80px;width:auto;display:block;margin:0 auto 1.5rem">
+      <h1 style="font-family:'Poppins',sans-serif;font-size:1.25rem;font-weight:700;color:#1C1C1E;margin-bottom:4px;">Area Amministrativa</h1>
+      <p style="font-size:13px;color:#666666;">Accedi con le tue credenziali di amministratore</p>
     </div>
 
-    <div style="background:white;border:1px solid #e5e7eb;border-radius:18px;padding:2rem;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+    <div style="background:white;border:1px solid #E0E0E0;border-radius:16px;padding:2rem;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
 
       {% if error %}
-      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:1.25rem;font-size:14px;color:#b91c1c;">
+      <div style="background:rgba(211,47,47,0.08);border:1px solid rgba(211,47,47,0.3);border-radius:10px;padding:12px 14px;margin-bottom:1.25rem;font-size:14px;color:#D32F2F;">
         {{ error }}
       </div>
       {% endif %}
 
       {% if request.query_params.get('reset') == 'ok' %}
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:1.25rem;font-size:14px;color:#166534;">
+      <div style="background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.35);border-radius:10px;padding:12px 14px;margin-bottom:1.25rem;font-size:14px;color:#2E7D32;">
         Password reimpostata con successo. Accedi con le nuove credenziali.
       </div>
       {% endif %}
@@ -54,7 +55,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <div style="margin-bottom:1rem;">
-          <label for="username" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Username</label>
+          <label for="username" style="display:block;font-size:13px;font-weight:600;color:#1C1C1E;margin-bottom:6px;">Username</label>
           <input
             type="text" id="username" name="username"
             placeholder="admin"
@@ -65,7 +66,7 @@
         </div>
 
         <div style="margin-bottom:1.5rem;">
-          <label for="password" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Password</label>
+          <label for="password" style="display:block;font-size:13px;font-weight:600;color:#1C1C1E;margin-bottom:6px;">Password</label>
           <input
             type="password" id="password" name="password"
             placeholder="••••••••"
@@ -76,18 +77,19 @@
 
         <button
           type="submit"
-          style="width:100%;background:#1f2937;color:white;border:none;border-radius:50px;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background 0.2s;min-height:48px;">
+          style="width:100%;background:#E8621A;color:white;border:none;border-radius:10px;padding:14px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s;min-height:48px;"
+          onmouseover="this.style.background='#CC5215'" onmouseout="this.style.background='#E8621A'">
           Accedi
         </button>
       </form>
 
       <p style="text-align:center;font-size:13px;margin-top:1.25rem;margin-bottom:0;">
-        <a href="/admin/forgot-password" style="color:#6b7280;text-decoration:none;">Password dimenticata?</a>
+        <a href="/admin/forgot-password" style="color:#666666;text-decoration:none;">Password dimenticata?</a>
       </p>
     </div>
 
-    <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:1.25rem;">
-      <a href="/" style="color:#9ca3af;text-decoration:none;">← Torna al sito pubblico</a>
+    <p style="text-align:center;font-size:12px;color:#999999;margin-top:1.25rem;">
+      <a href="/" style="color:#999999;text-decoration:none;">← Torna al sito pubblico</a>
     </p>
 
   </div>

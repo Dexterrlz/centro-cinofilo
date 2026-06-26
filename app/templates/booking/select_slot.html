@@ -29,7 +29,7 @@
       {{ icons.get(discipline.name, '⭐') }}
     </div>
     <div>
-      <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
+      <h1 style="font-family:'Poppins',sans-serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
         {{ discipline.name }}{% if discipline.instructor %} <span style="color:var(--color-muted);font-weight:400;">con {{ discipline.instructor.name }}</span>{% endif %}
       </h1>
       <p style="color:var(--color-muted);font-size:13px;margin:0;">Slot da {{ discipline.slot_duration_minutes or 30 }} minuti</p>
@@ -41,7 +41,7 @@
   {# ── Pacchetto esaurito ───────────────────────────────── #}
   <div class="card" style="padding:3rem;text-align:center;">
     <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
-    <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
       Pacchetto esaurito
     </h2>
     <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
@@ -119,7 +119,7 @@
 
   <div class="card" style="padding:3rem;text-align:center;">
     <div style="font-size:2.5rem;margin-bottom:1rem;">📅</div>
-    <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
       Nessuno slot disponibile
     </h2>
     <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">

@@ -5,7 +5,7 @@
 <div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px;">
-    <h1 style="font-family:'Playfair Display',serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin:0;">
+    <h1 style="font-family:'Poppins',sans-serif;font-size:1.85rem;color:var(--color-choco);font-weight:600;margin:0;">
       Le mie prenotazioni
     </h1>
     <a href="/" class="btn-secondary" style="font-size:14px;padding:10px 20px;">
@@ -13,7 +13,51 @@
     </a>
   </div>
 
-  {% set disc_icons = {'Agility':'🏃','Dog Training 1':'🦴','Dog Training 2':'🎯','Dog Training 3':'🎀'} %}
+  {% set disc_icons = {
+    'Agility':'🏃','Swim Dog Sport':'🏊','Educazione di Base':'🦴',
+    'Hoopers':'🎯','Rally Obedience':'🎀','Nosework':'👃'
+  } %}
+
+  {# ── Le mie discipline ───────────────────────────────────── #}
+  <div style="margin-bottom:2.5rem;">
+    <p class="section-label">Le mie discipline</p>
+
+    {% if packages %}
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for pkg in packages %}
+      {% set pct = ((pkg.lessons_completed / pkg.total_lessons) * 100) | int %}
+      <div style="background:var(--color-bg-card);border:1.5px solid var(--color-border{% if not pkg.is_active %}-light{% endif %});border-radius:14px;padding:0.9rem 1.125rem;display:flex;align-items:center;gap:14px;{% if not pkg.is_active %}opacity:0.7;{% endif %}">
+
+        <div style="font-size:1.5rem;width:40px;text-align:center;flex-shrink:0;">
+          {{ disc_icons.get(pkg.discipline.name, '⭐') }}
+        </div>
+
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+            <span style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;color:var(--color-choco);">{{ pkg.discipline.name }}</span>
+            <span style="font-size:12px;color:var(--color-muted);">con {{ pkg.instructor.name }}</span>
+            {% if not pkg.is_active %}
+            <span class="badge" style="background:#F5F5F5;color:#8E8E93;font-size:11px;padding:2px 8px;">Esaurito</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;height:6px;background:var(--color-bg-section);border-radius:99px;overflow:hidden;">
+              <div style="height:100%;width:{{ pct }}%;background:{% if pkg.is_active %}var(--color-primary){% else %}#C7C7C7{% endif %};border-radius:99px;"></div>
+            </div>
+            <span style="font-size:13px;font-weight:700;color:{% if pkg.is_active %}var(--color-primary){% else %}var(--color-muted){% endif %};white-space:nowrap;min-width:32px;text-align:right;">{{ pkg.lessons_completed }}/{{ pkg.total_lessons }}</span>
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <p style="color:var(--color-muted);font-size:14px;padding:0.5rem 0;">
+      Nessun pacchetto attivo. Il tuo pacchetto verrà creato automaticamente alla prima prenotazione.
+    </p>
+    {% endif %}
+  </div>
 
   {# ── Prossime lezioni ────────────────────────────────────── #}
   <div style="margin-bottom:2.5rem;">
@@ -72,7 +116,7 @@
     {% else %}
     <div class="card" style="padding:3rem;text-align:center;">
       <div style="font-size:3rem;margin-bottom:0.75rem;">🐾</div>
-      <h2 style="font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--color-choco);margin-bottom:0.5rem;">
+      <h2 style="font-family:'Poppins',sans-serif;font-size:1.15rem;color:var(--color-choco);margin-bottom:0.5rem;">
         Nessuna lezione in programma
       </h2>
       <p style="color:var(--color-muted);font-size:14px;margin-bottom:1.5rem;">
@@ -114,7 +158,7 @@
         </div>
 
         <div>
-          <span class="badge" style="background:rgba(156,184,154,0.35);color:#245c22;">✓ Completata</span>
+          <span class="badge" style="background:rgba(76,175,80,0.18);color:#2E7D32;">✓ Completata</span>
         </div>
 
       </div>

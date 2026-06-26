@@ -23,6 +23,6 @@ class Package(Base):
     activated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="packages")
     discipline = relationship("Discipline", back_populates="packages")
     instructor = relationship("Instructor", back_populates="packages")

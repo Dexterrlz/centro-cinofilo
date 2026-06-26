@@ -7,24 +7,31 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="theme-color" content="#E8621A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-[#F5F5F5] text-black">
 
 <!-- Navbar admin -->
-<nav class="bg-gray-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+<nav class="bg-black text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50">
   <div class="flex items-center gap-3">
     <span class="font-bold text-base">🐾 Admin</span>
     <span class="text-gray-400 text-sm hidden sm:block">|</span>
     <span class="text-gray-400 text-sm hidden sm:block">{{ current_instructor.name if current_instructor else admin_username }}</span>
   </div>
   <div class="flex items-center gap-2">
-    <a href="/" target="_blank" class="text-gray-300 hover:text-white text-xs px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+    <a href="/" target="_blank" class="text-gray-300 hover:text-[#E8621A] text-xs px-3 py-1 rounded-lg hover:bg-white/10 transition-colors">
       Sito pubblico ↗
     </a>
-    <a href="/admin/change-password" class="text-gray-300 hover:text-white text-xs px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+    <a href="/admin/change-password" class="text-gray-300 hover:text-[#E8621A] text-xs px-3 py-1 rounded-lg hover:bg-white/10 transition-colors">
       Cambia password
     </a>
-    <a href="/admin/logout" class="text-gray-300 hover:text-white text-xs px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors">
+    <a href="/admin/logout" class="text-gray-300 hover:text-[#E8621A] text-xs px-3 py-1 rounded-lg hover:bg-white/10 transition-colors">
       Esci
     </a>
   </div>
@@ -47,7 +54,7 @@
       <p class="text-xs text-gray-500 mt-1">Oggi</p>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
-      <p class="text-2xl font-bold text-blue-600">{{ stats.imminenti }}</p>
+      <p class="text-2xl font-bold text-[#E8621A]">{{ stats.imminenti }}</p>
       <p class="text-xs text-gray-500 mt-1">Prossimi</p>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
@@ -78,6 +85,10 @@
       class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-600 hover:text-gray-900">
       Pacchetti
     </button>
+    <a href="/admin/users"
+      class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-600 hover:text-gray-900 hover:bg-white/60 transition-colors">
+      Utenti
+    </a>
   </div>
 
   <!-- ─── TAB: PRENOTAZIONI ──────────────────────────────────────────── -->
@@ -87,7 +98,7 @@
     <form method="GET" action="/admin" class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-wrap gap-3 items-end shadow-sm">
       <div>
         <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
-        <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
           <option value="">Tutte</option>
           {% for d in disciplines %}
           <option value="{{ d.id }}" {% if filter_discipline == d.id|string %}selected{% endif %}>{{ d.display_name }}</option>
@@ -96,7 +107,7 @@
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">Stato</label>
-        <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
           <option value="">Tutti</option>
           {% for s in statuses %}
           <option value="{{ s.value }}" {% if filter_status == s.value %}selected{% endif %}>{{ status_labels_it.get(s.value, s.value) }}</option>
@@ -106,19 +117,19 @@
       <div>
         <label class="block text-xs text-gray-500 mb-1">Dal</label>
         <input type="date" name="date_from" value="{{ filter_date_from }}"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">Al</label>
         <input type="date" name="date_to" value="{{ filter_date_to }}"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
       </div>
       <div>
         <label class="block text-xs text-gray-500 mb-1">Utente</label>
         <input type="text" name="user_search" value="{{ filter_user_search }}" placeholder="Nome o cognome"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
       </div>
-      <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+      <button type="submit" class="bg-[#E8621A] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#CC5215] transition-colors">
         Filtra
       </button>
       <a href="/admin" class="text-gray-500 hover:text-gray-700 text-sm py-2">Reset</a>
@@ -164,7 +175,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
-          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]" required>
             {% for d in disciplines %}
             <option value="{{ d.id }}">{{ d.display_name }}</option>
             {% endfor %}
@@ -172,7 +183,7 @@
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Giorno</label>
-          <select name="day_of_week" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+          <select name="day_of_week" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]" required>
             {% for g in giorni %}
             <option value="{{ loop.index0 }}">{{ g }}</option>
             {% endfor %}
@@ -181,14 +192,14 @@
         <div>
           <label class="block text-xs text-gray-500 mb-1">Dalle</label>
           <input type="time" name="start_time" min="09:00" max="20:30" step="1800"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]" required>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Alle</label>
           <input type="time" name="end_time" min="09:30" max="21:00" step="1800"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]" required>
         </div>
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        <button type="submit" class="bg-[#E8621A] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#CC5215] transition-colors">
           Aggiungi
         </button>
       </form>
@@ -215,7 +226,7 @@
             <td class="px-4 py-3 text-right">
               <form method="POST" action="/admin/disponibilita/{{ r.id }}/elimina">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium" onclick="return confirm('Eliminare questa regola?')">
+                <button type="submit" class="text-[#D32F2F] hover:text-[#B71C1C] text-xs font-medium" onclick="return confirm('Eliminare questa regola?')">
                   Elimina
                 </button>
               </form>
@@ -243,11 +254,11 @@
         <div>
           <label class="block text-xs text-gray-500 mb-1">Data</label>
           <input type="date" name="blocked_date" min="{{ today.isoformat() }}"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]" required>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Disciplina (opz.)</label>
-          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
             <option value="">Tutte le discipline</option>
             {% for d in disciplines %}
             <option value="{{ d.id }}">{{ d.display_name }}</option>
@@ -257,9 +268,9 @@
         <div>
           <label class="block text-xs text-gray-500 mb-1">Motivo (opz.)</label>
           <input type="text" name="reason" placeholder="es. Chiusura festiva"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
         </div>
-        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+        <button type="submit" class="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#B71C1C] transition-colors">
           Blocca
         </button>
       </form>
@@ -274,19 +285,19 @@
         <div>
           <label class="block text-xs text-gray-500 mb-1">Dal</label>
           <input type="date" name="date_from" min="{{ today.isoformat() }}"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" required>
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D32F2F]" required>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Al</label>
           <input type="date" name="date_to" min="{{ today.isoformat() }}"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" required>
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D32F2F]" required>
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Motivo</label>
           <input type="text" name="reason" placeholder="es. Ferie natalizie"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D32F2F]">
         </div>
-        <button type="submit" class="bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-800 transition-colors">
+        <button type="submit" class="bg-[#B71C1C] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#8e1616] transition-colors">
           Applica blocco globale
         </button>
       </form>
@@ -321,7 +332,7 @@
             <td class="px-4 py-3 text-right">
               <form method="POST" action="/admin/date-bloccate/{{ bd.id }}/elimina">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium" onclick="return confirm('Rimuovere il blocco?')">
+                <button type="submit" class="text-[#D32F2F] hover:text-[#B71C1C] text-xs font-medium" onclick="return confirm('Rimuovere il blocco?')">
                   Elimina
                 </button>
               </form>
@@ -348,14 +359,14 @@
             <h3 class="text-sm font-semibold text-gray-900">{{ d.display_name }}</h3>
             <p class="text-xs text-gray-400 mt-0.5">Slot da {{ d.slot_duration_minutes or '—' }} min (non modificabile)</p>
           </div>
-          <span class="px-2 py-1 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if d.is_active else 'bg-gray-100 text-gray-600' }}">
+          <span class="px-2 py-1 rounded-full text-xs font-medium {{ 'bg-[#E8F5E9] text-[#2E7D32]' if d.is_active else 'bg-[#F5F5F5] text-[#666666]' }}">
             {{ 'Attiva' if d.is_active else 'Chiusa temporaneamente' }}
           </span>
         </div>
 
         <form method="POST" action="/admin/disciplines/{{ d.id }}/toggle" class="mb-3">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg {{ 'bg-gray-100 text-gray-700 hover:bg-gray-200' if d.is_active else 'bg-green-600 text-white hover:bg-green-700' }} transition-colors">
+          <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg {{ 'bg-gray-100 text-gray-700 hover:bg-gray-200' if d.is_active else 'bg-[#4CAF50] text-white hover:bg-[#3d8b40]' }} transition-colors">
             {{ 'Chiudi temporaneamente' if d.is_active else 'Riattiva' }}
           </button>
         </form>
@@ -365,14 +376,14 @@
           <div>
             <label class="block text-xs text-gray-500 mb-1">Periodo stagionale — Dal</label>
             <input type="date" name="active_from" value="{{ d.active_from.isoformat() if d.active_from else '' }}"
-              class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+              class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
           </div>
           <div>
             <label class="block text-xs text-gray-500 mb-1">Al</label>
             <input type="date" name="active_until" value="{{ d.active_until.isoformat() if d.active_until else '' }}"
-              class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+              class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
           </div>
-          <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors">
+          <button type="submit" class="bg-[#E8621A] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#CC5215] transition-colors">
             Salva periodo
           </button>
         </form>
@@ -400,11 +411,11 @@
               </p>
               <div class="flex items-center gap-2 mt-1 flex-wrap">
                 <div class="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div class="h-full bg-blue-500" style="width: {{ (p.lessons_completed / p.total_lessons * 100) if p.total_lessons else 0 }}%;"></div>
+                  <div class="h-full" style="background:{{ '#D32F2F' if not p.is_active else '#4CAF50' }};width: {{ (p.lessons_completed / p.total_lessons * 100) if p.total_lessons else 0 }}%;"></div>
                 </div>
                 <span class="text-xs text-gray-500">{{ p.lessons_completed }}/{{ p.total_lessons }} lezioni</span>
                 {% if not p.is_active %}
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-[#FFEBEE] text-[#C62828]">
                   {{ 'Esaurito' if p.lessons_completed >= p.total_lessons else 'Bloccato' }}
                 </span>
                 {% endif %}
@@ -413,7 +424,7 @@
             <div class="flex gap-2">
               <form method="POST" action="/admin/packages/{{ p.id }}/renew" onsubmit="return confirm('Rinnovare questo pacchetto?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#E8621A] text-white hover:bg-[#CC5215] transition-colors">
                   Rinnova
                 </button>
               </form>
@@ -427,7 +438,7 @@
               {% else %}
               <form method="POST" action="/admin/packages/{{ p.id }}/unlock">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
+                <button type="submit" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#4CAF50] text-white hover:bg-[#3d8b40] transition-colors">
                   Sblocca
                 </button>
               </form>
