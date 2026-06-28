@@ -144,8 +144,7 @@ class AppointmentRepository:
         if appointment:
             appointment.status = status
             self.db.commit()
-            self.db.refresh(appointment)
-        return appointment
+        return self.get_by_id(appointment_id) if appointment else None
 
     def get_all_filtered(
         self,

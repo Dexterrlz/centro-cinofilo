@@ -13,6 +13,66 @@
   <style>
     body { font-family: 'Inter', system-ui, sans-serif; }
     h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+
+    /* ── Cell helpers ─────────────────────────────────── */
+    .admin-cell-stack { display:flex; flex-direction:column; gap:2px; }
+    .admin-cell-primary { font-size:14px; font-weight:500; color:#111827; }
+    .admin-cell-secondary { font-size:12px; color:#6B7280; }
+    .admin-btn-save {
+      padding:5px 10px; background:#E8621A; color:#fff;
+      border:none; border-radius:8px; font-size:12px; font-weight:500;
+      cursor:pointer;
+    }
+    .admin-btn-save:hover { background:#CC5215; }
+
+    /* ── Status badges ────────────────────────────────── */
+    .badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; }
+    .status-pending   { background:#FEF3C7; color:#92400E; }
+    .status-confirmed { background:#D1FAE5; color:#065F46; }
+    .status-cancelled { background:#FEE2E2; color:#991B1B; }
+    .status-completed { background:#DBEAFE; color:#1E40AF; }
+    .status-no_show   { background:#F3F4F6; color:#374151; }
+
+    /* ── Responsive admin tables ──────────────────────── */
+    .admin-table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+    @media (max-width:767px) {
+      .admin-table thead { display:none; }
+      .admin-table tbody tr {
+        display:block; background:#fff;
+        border:1px solid #E5E7EB; border-radius:12px;
+        margin-bottom:10px; padding:12px 14px;
+        box-shadow:0 1px 3px rgba(0,0,0,.05);
+      }
+      .admin-table tbody td {
+        display:flex !important; justify-content:space-between;
+        align-items:flex-start; padding:6px 0;
+        border:none !important; border-bottom:1px solid #F3F4F6 !important;
+        font-size:13px; text-align:right;
+      }
+      .admin-table tbody td:last-child {
+        border-bottom:none !important; padding-top:10px; justify-content:flex-end;
+      }
+      .admin-table tbody td::before {
+        content:attr(data-label); font-size:10px; font-weight:600;
+        color:#6B7280; text-transform:uppercase; letter-spacing:.05em;
+        margin-right:8px; white-space:nowrap; flex-shrink:0;
+        text-align:left; padding-top:2px; min-width:80px;
+      }
+      /* Filter form */
+      .admin-filters { flex-direction:column !important; align-items:stretch !important; }
+      .admin-filters > * { box-sizing:border-box; }
+      .admin-filters select,
+      .admin-filters input { width:100% !important; height:44px; font-size:16px; box-sizing:border-box; }
+      .admin-filters > button,
+      .admin-filters > a { display:flex; align-items:center; justify-content:center; height:44px; width:100%; }
+      /* Add/edit forms */
+      .availability-form { flex-direction:column !important; align-items:stretch !important; }
+      .availability-form > * { box-sizing:border-box; }
+      .availability-form select,
+      .availability-form input { width:100% !important; height:44px; font-size:16px; box-sizing:border-box; }
+      .availability-form > button { height:48px; width:100%; }
+    }
   </style>
 </head>
 <body class="bg-[#F5F5F5] text-black">
@@ -95,7 +155,7 @@
   <div id="section-prenotazioni" class="tab-section">
 
     <!-- Filtri -->
-    <form method="GET" action="/admin" class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-wrap gap-3 items-end shadow-sm">
+    <form method="GET" action="/admin" class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-wrap gap-3 items-end shadow-sm admin-filters">
       <div>
         <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
         <select name="discipline_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8621A]">
@@ -138,14 +198,13 @@
     <!-- Tabella prenotazioni -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {% if appointments %}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+      <div class="admin-table-wrapper">
+        <table class="w-full text-sm admin-table">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Data/Ora</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Cliente</th>
-              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Email</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cliente</th>
               <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Stato</th>
               <th class="px-4 py-3"></th>
             </tr>
@@ -171,7 +230,7 @@
     <!-- Aggiungi regola -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
       <h3 class="text-sm font-semibold text-gray-800 mb-4">Aggiungi fascia oraria</h3>
-      <form method="POST" action="/admin/disponibilita" class="flex flex-wrap gap-3 items-end">
+      <form method="POST" action="/admin/disponibilita" class="flex flex-wrap gap-3 items-end availability-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Disciplina</label>
@@ -208,7 +267,8 @@
     <!-- Lista regole -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {% if rules %}
-      <table class="w-full text-sm">
+      <div class="admin-table-wrapper">
+      <table class="w-full text-sm admin-table">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina + Istruttore</th>
@@ -220,10 +280,10 @@
         <tbody class="divide-y divide-gray-100">
           {% for r in rules %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">{{ r.discipline.display_name }}</td>
-            <td class="px-4 py-3 text-gray-600">{{ giorni[r.day_of_week] }}</td>
-            <td class="px-4 py-3 text-gray-600">{{ r.start_time.strftime('%H:%M') }} – {{ r.end_time.strftime('%H:%M') }}</td>
-            <td class="px-4 py-3 text-right">
+            <td class="px-4 py-3 font-medium" data-label="Disciplina">{{ r.discipline.display_name }}</td>
+            <td class="px-4 py-3 text-gray-600" data-label="Giorno">{{ giorni[r.day_of_week] }}</td>
+            <td class="px-4 py-3 text-gray-600" data-label="Fascia oraria">{{ r.start_time.strftime('%H:%M') }} – {{ r.end_time.strftime('%H:%M') }}</td>
+            <td class="px-4 py-3 text-right" data-label="Azioni">
               <form method="POST" action="/admin/disponibilita/{{ r.id }}/elimina">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="text-[#D32F2F] hover:text-[#B71C1C] text-xs font-medium" onclick="return confirm('Eliminare questa regola?')">
@@ -235,6 +295,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% else %}
       <div class="p-8 text-center text-gray-400 text-sm">
         Nessuna regola di disponibilità configurata.
@@ -249,7 +310,7 @@
     <!-- Aggiungi data bloccata -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
       <h3 class="text-sm font-semibold text-gray-800 mb-4">Blocca una data</h3>
-      <form method="POST" action="/admin/date-bloccate" class="flex flex-wrap gap-3 items-end">
+      <form method="POST" action="/admin/date-bloccate" class="flex flex-wrap gap-3 items-end availability-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Data</label>
@@ -280,7 +341,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 shadow-sm">
       <h3 class="text-sm font-semibold text-gray-800 mb-1">Blocco ferie globale</h3>
       <p class="text-xs text-gray-500 mb-4">Blocca un intero periodo per tutte le discipline del centro (es. ferie natalizie).</p>
-      <form method="POST" action="/admin/ferie-globali" class="flex flex-wrap gap-3 items-end">
+      <form method="POST" action="/admin/ferie-globali" class="flex flex-wrap gap-3 items-end availability-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Dal</label>
@@ -306,20 +367,21 @@
     <!-- Lista date bloccate -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {% if blocked_dates %}
-      <table class="w-full text-sm">
+      <div class="admin-table-wrapper">
+      <table class="w-full text-sm admin-table">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Data</th>
             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Disciplina</th>
-            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Motivo</th>
+            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Motivo</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           {% for bd in blocked_dates %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">{{ bd.blocked_date.strftime('%d/%m/%Y') }}</td>
-            <td class="px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 font-medium" data-label="Data">{{ bd.blocked_date.strftime('%d/%m/%Y') }}</td>
+            <td class="px-4 py-3 text-gray-600" data-label="Disciplina">
               {% if bd.all_disciplines or not bd.discipline_id %}
                 Tutte
               {% elif bd.discipline %}
@@ -328,8 +390,8 @@
                 —
               {% endif %}
             </td>
-            <td class="px-4 py-3 text-gray-500 hidden sm:table-cell">{{ bd.reason or '—' }}</td>
-            <td class="px-4 py-3 text-right">
+            <td class="px-4 py-3 text-gray-500" data-label="Motivo">{{ bd.reason or '—' }}</td>
+            <td class="px-4 py-3 text-right" data-label="Azioni">
               <form method="POST" action="/admin/date-bloccate/{{ bd.id }}/elimina">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="text-[#D32F2F] hover:text-[#B71C1C] text-xs font-medium" onclick="return confirm('Rimuovere il blocco?')">
@@ -341,6 +403,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
       {% else %}
       <div class="p-8 text-center text-gray-400 text-sm">
         Nessuna data bloccata.

@@ -321,7 +321,7 @@ async def update_appointment_status(
         new_status = AppointmentStatus(new_status_str)
     except ValueError:
         return HTMLResponse(
-            '<tr><td colspan="6" class="px-4 py-3 text-red-600 text-sm">Stato non valido.</td></tr>',
+            '<tr><td colspan="5" class="px-4 py-3 text-red-600 text-sm">Stato non valido.</td></tr>',
             status_code=422,
         )
 
@@ -334,7 +334,7 @@ async def update_appointment_status(
 
     if not appointment:
         return HTMLResponse(
-            '<tr><td colspan="6" class="px-4 py-3 text-red-600 text-sm">Prenotazione non trovata.</td></tr>',
+            '<tr><td colspan="5" class="px-4 py-3 text-red-600 text-sm">Prenotazione non trovata.</td></tr>',
             status_code=404,
         )
 

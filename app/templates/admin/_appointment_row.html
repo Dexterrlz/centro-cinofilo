@@ -13,30 +13,30 @@
   'no_show': 'status-no_show'
 } %}
 <tr class="hover:bg-gray-50 transition-colors">
-  <td class="px-4 py-3 whitespace-nowrap">
+  <td class="px-4 py-3 whitespace-nowrap" data-label="Data/Ora">
     <div class="admin-cell-stack">
       <span class="admin-cell-primary">{{ a.appointment_date.strftime('%d/%m/%y') }}</span>
       <span class="admin-cell-secondary">{{ a.start_time.strftime('%H:%M') }}</span>
     </div>
   </td>
-  <td class="px-4 py-3">
+  <td class="px-4 py-3" data-label="Disciplina">
     <div class="admin-cell-stack">
       <span class="admin-cell-primary">{{ a.discipline.name }}</span>
       {% if a.instructor %}<span class="admin-cell-secondary">{{ a.instructor.name }}</span>{% endif %}
     </div>
   </td>
-  <td class="px-4 py-3 hidden sm:table-cell">
+  <td class="px-4 py-3" data-label="Cliente">
     <div class="admin-cell-stack">
       <span class="admin-cell-primary">{{ a.user.first_name }} {{ a.user.last_name }}</span>
-      <span class="admin-cell-secondary hidden md:inline">{{ a.user.email }}</span>
+      <span class="admin-cell-secondary">{{ a.user.phone }}</span>
     </div>
   </td>
-  <td class="px-4 py-3">
+  <td class="px-4 py-3" data-label="Stato">
     <span class="badge {{ status_css.get(a.status.value, 'status-no_show') }}">
       {{ status_labels_it.get(a.status.value, a.status.value) }}
     </span>
   </td>
-  <td class="px-4 py-3">
+  <td class="px-4 py-3" data-label="Aggiorna">
     <form hx-post="/admin/appointments/{{ a.id }}/status" hx-target="closest tr" hx-swap="outerHTML" class="flex gap-1">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <select name="status" class="border border-[#E0E0E0] rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#E8621A]">

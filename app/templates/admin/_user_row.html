@@ -4,18 +4,18 @@
 {% set search_str = (u.first_name ~ ' ' ~ u.last_name ~ ' ' ~ u.email ~ ' ' ~ u.phone)|lower %}
 <tr data-stato="{{ stato_key }}" data-search="{{ search_str }}" id="user-row-{{ u.id }}"
     class="hover:bg-gray-50 transition-colors">
-  <td class="px-4 py-3">
-    <div class="font-medium text-gray-900">{{ u.first_name }} {{ u.last_name }}</div>
-    {% if u.dog_name %}
-    <div class="text-xs text-gray-400">🐾 {{ u.dog_name }}</div>
-    {% endif %}
+  <td class="px-4 py-3" data-label="Nome">
+    <div class="admin-cell-stack">
+      <span class="admin-cell-primary">{{ u.first_name }} {{ u.last_name }}</span>
+      {% if u.dog_name %}<span class="admin-cell-secondary">🐾 {{ u.dog_name }}</span>{% endif %}
+    </div>
   </td>
-  <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ u.phone }}</td>
-  <td class="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">{{ u.email }}</td>
-  <td class="px-4 py-3 text-gray-500 text-xs hidden sm:table-cell whitespace-nowrap">
+  <td class="px-4 py-3 text-gray-700 whitespace-nowrap" data-label="Telefono">{{ u.phone }}</td>
+  <td class="px-4 py-3 text-gray-500 text-xs" data-label="Email">{{ u.email }}</td>
+  <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap" data-label="Registrato">
     {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else '—' }}
   </td>
-  <td class="px-4 py-3">
+  <td class="px-4 py-3" data-label="Stato">
     {% if is_pending %}
     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
       ⏳ In attesa
@@ -30,7 +30,7 @@
     </span>
     {% endif %}
   </td>
-  <td class="px-4 py-3 text-right">
+  <td class="px-4 py-3 text-right" data-label="Azione">
     <form hx-post="/admin/users/{{ u.id }}/toggle"
           hx-target="#user-row-{{ u.id }}"
           hx-swap="outerHTML"
