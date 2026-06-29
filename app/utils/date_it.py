@@ -60,6 +60,31 @@ def format_date_it(value, fmt: str) -> str:
     return text
 
 
+STATUS_LABELS_IT = {
+    "pending": "In attesa",
+    "confirmed": "Confermata",
+    "cancelled": "Cancellata",
+    "completed": "Completata",
+    "no_show": "Assente",
+}
+
+
+def format_date_long(value) -> str:
+    """Formatta una data come 'Lunedì 28 Giugno 2026'."""
+    giorno = GIORNI_ITA.get(value.strftime("%A"), value.strftime("%A"))
+    mese = MESI_ITA.get(value.strftime("%B"), value.strftime("%B"))
+    return f"{giorno} {value.day} {mese} {value.year}"
+
+
+def format_status_label(value) -> str:
+    raw = value.value if hasattr(value, "value") else str(value)
+    return STATUS_LABELS_IT.get(raw, raw)
+
+
 def register_date_filters(templates) -> None:
-    """Registra il filtro Jinja2 'it_date' per la formattazione localizzata delle date."""
+    """Registra i filtri Jinja2 per la formattazione localizzata."""
     templates.env.filters["it_date"] = format_date_it
+    templates.env.filters["data_lunga"] = format_date_long
+    templates.env.filters["format_date_long"] = format_date_long
+    templates.env.filters["stato_label"] = format_status_label
+    templates.env.filters["status_label"] = format_status_label

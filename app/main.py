@@ -18,6 +18,7 @@ from app.routers import profile as profile_router
 from app.utils.auth import NotAuthenticated
 from app.utils.csrf import get_csrf_token
 from app.utils.date_it import register_date_filters
+from app.utils.template_helpers import discipline_color
 
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 templates = Jinja2Templates(directory="app/templates")
 register_date_filters(templates)
+templates.env.globals["discipline_color"] = discipline_color
 
 
 def _seed_initial_data():

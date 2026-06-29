@@ -1,0 +1,114 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Agenda{% endblock %}
+
+{% block admin_content %}
+
+<!-- Switcher istruttori -->
+<div class="instr-switcher">
+  {% for instr in all_instructors %}
+  <a href="/admin/agenda?instructor_id={{ instr.id }}&selected_date={{ selected_date }}"
+     class="instr-btn {{ 'active' if instr.id == viewed_instructor.id }}">
+    <div class="instr-av">{{ instr.name[:2].upper() }}</div>
+    {{ instr.name }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Navigazione data -->
+<div class="date-nav">
+  <a href="/admin/agenda?instructor_id={{ viewed_instructor.id }}&selected_date={{ prev_date }}"
+     class="btn-nav">‹ Ieri</a>
+  <div class="current-date">
+    {{ selected_date | format_date_long }}
+    {% if selected_date == today %}
+    <span class="today-badge">OGGI</span>
+    {% endif %}
+  </div>
+  <a href="/admin/agenda?instructor_id={{ viewed_instructor.id }}&selected_date={{ next_date }}"
+     class="btn-nav">Domani ›</a>
+</div>
+
+<!-- Legenda discipline -->
+<div class="agenda-legend">
+  {% for disc in viewed_instructor.disciplines if disc.is_active %}
+  <div class="legend-item">
+    <div class="legend-dot" style="background:{{ discipline_color(disc.name) }}"></div>
+    {{ disc.display_name }}
+  </div>
+  {% endfor %}
+  <div class="legend-item">
+    <div class="legend-dot" style="background:var(--color-border)"></div>
+    Slot libero
+  </div>
+</div>
+
+<!-- Timeline -->
+{% if timeline %}
+  {% for group in timeline %}
+  <div class="period-section">
+    <div class="period-label">{{ group.period | capitalize }}</div>
+
+    {% for slot in group.slots %}
+    <div class="agenda-slot-row">
+      <div class="slot-time">
+        {{ slot.start.strftime('%H:%M') }} →
+        {{ slot.end.strftime('%H:%M') }}
+      </div>
+
+      {% if slot.is_free %}
+      <div class="slot-card slot-free">
+        <div class="slot-dot" style="background:var(--color-border)"></div>
+        <div class="slot-free-text">Slot libero</div>
+      </div>
+
+      {% else %}
+      {% set appt = slot.appointment %}
+      {% set ll = slot.lessons_left %}
+
+      <div class="slot-card
+        {% if ll is not none and ll == 0 %}slot-danger
+        {% elif ll is not none and ll <= 2 %}slot-warn
+        {% else %}slot-occupied{% endif %}">
+
+        <div class="slot-dot"
+             style="background:{{ discipline_color(slot.discipline.name) }}">
+        </div>
+
+        <div class="slot-info">
+          <div class="slot-name">
+            {{ appt.user.first_name }} {{ appt.user.last_name }}
+          </div>
+          <div class="slot-meta">
+            <span class="slot-disc">{{ slot.discipline.name }}</span>
+            {% if slot.package %}
+            <span class="slot-pkg
+              {% if ll == 0 %}pkg-danger
+              {% elif ll <= 2 %}pkg-warn
+              {% else %}pkg-ok{% endif %}">
+              {{ slot.package.lessons_completed }}/{{ slot.package.total_lessons }}
+              {% if ll == 0 %} — esaurito{% endif %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <span class="badge badge-{{ appt.status }}">
+          {{ appt.status | status_label }}
+        </span>
+
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <i class="ti ti-calendar-off" style="font-size:40px; color:var(--color-text-muted)" aria-hidden="true"></i>
+  <p>Nessuna disponibilità configurata per questo giorno</p>
+</div>
+{% endif %}
+
+{% endblock %}

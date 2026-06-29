@@ -183,3 +183,77 @@ class AvailabilityService:
 
     def is_slot_available(self, discipline_id: int, check_date: date, slot_time: time) -> bool:
         return slot_time in self.get_available_slots(discipline_id, check_date)
+
+
+def build_daily_timeline(db: Session, instructor, target_date: date) -> list:
+    """
+    Costruisce la timeline giornaliera per un istruttore.
+    Ritorna lista di gruppi: [{'period': 'mattina', 'slots': [...]}, ...]
+    """
+    rule_repo = AvailabilityRuleRepository(db)
+    appt_repo = AppointmentRepository(db)
+    disc_repo = DisciplineRepository(db)
+
+    disciplines = disc_repo.get_by_instructor(instructor.id)
+    weekday = target_date.weekday()
+    all_slots = []
+    seen = set()
+
+    for discipline in disciplines:
+        rules = rule_repo.get_by_discipline_and_day(discipline.id, weekday)
+        if not rules:
+            continue
+
+        duration = discipline.slot_duration_minutes or DEFAULT_SLOT_DURATION
+
+        for rule in rules:
+            for slot_start in generate_slots(rule.start_time, rule.end_time, duration):
+                key = (slot_start, discipline.id)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                slot_end = (
+                    datetime.combine(target_date, slot_start) + timedelta(minutes=duration)
+                ).time()
+                appointment = appt_repo.get_by_slot(
+                    discipline.id, instructor.id, target_date, slot_start
+                )
+
+                package = None
+                lessons_left = None
+
+                if appointment:
+                    package = appointment.package
+                    if package:
+                        lessons_left = package.total_lessons - package.lessons_completed
+
+                all_slots.append({
+                    "start": slot_start,
+                    "end": slot_end,
+                    "discipline": discipline,
+                    "is_free": appointment is None,
+                    "appointment": appointment,
+                    "package": package,
+                    "lessons_left": lessons_left,
+                })
+
+    all_slots.sort(key=lambda s: (s["start"], s["discipline"].name))
+
+    def get_period(t):
+        if t < time(13, 0):
+            return "mattina"
+        if t < time(18, 0):
+            return "pomeriggio"
+        return "sera"
+
+    grouped = {}
+    for slot in all_slots:
+        period = get_period(slot["start"])
+        grouped.setdefault(period, []).append(slot)
+
+    return [
+        {"period": period, "slots": grouped[period]}
+        for period in ["mattina", "pomeriggio", "sera"]
+        if period in grouped
+    ]

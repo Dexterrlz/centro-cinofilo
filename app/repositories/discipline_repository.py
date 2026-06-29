@@ -48,5 +48,18 @@ class DisciplineRepository:
             self.db.refresh(discipline)
         return discipline
 
+    def get_by_instructor(self, instructor_id: int) -> List[Discipline]:
+        """Discipline attive di un istruttore."""
+        return (
+            self.db.query(Discipline)
+            .options(joinedload(Discipline.instructor))
+            .filter(
+                Discipline.instructor_id == instructor_id,
+                Discipline.is_active == True,
+            )
+            .order_by(Discipline.name)
+            .all()
+        )
+
     def count(self) -> int:
         return self.db.query(Discipline).count()
