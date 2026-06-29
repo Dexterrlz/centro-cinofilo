@@ -79,5 +79,13 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
+    def get_all_active(self) -> List[User]:
+        return (
+            self.db.query(User)
+            .filter(User.is_active == True)
+            .order_by(User.last_name, User.first_name)
+            .all()
+        )
+
     def exists(self) -> bool:
         return self.db.query(User).count() > 0

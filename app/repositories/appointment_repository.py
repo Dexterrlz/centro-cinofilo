@@ -146,6 +146,30 @@ class AppointmentRepository:
             self.db.commit()
         return self.get_by_id(appointment_id) if appointment else None
 
+    def get_by_slot(
+        self,
+        discipline_id: int,
+        instructor_id: int,
+        appointment_date: date,
+        start_time: time,
+    ) -> Optional[Appointment]:
+        """Recupera la prenotazione per uno specifico slot (per la vista agenda)."""
+        return (
+            self.db.query(Appointment)
+            .options(
+                joinedload(Appointment.user),
+                joinedload(Appointment.package),
+            )
+            .filter(
+                Appointment.discipline_id == discipline_id,
+                Appointment.instructor_id == instructor_id,
+                Appointment.appointment_date == appointment_date,
+                Appointment.start_time == start_time,
+                Appointment.status.in_([AppointmentStatus.pending, AppointmentStatus.confirmed]),
+            )
+            .first()
+        )
+
     def get_all_filtered(
         self,
         status: Optional[AppointmentStatus] = None,
