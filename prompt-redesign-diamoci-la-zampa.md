@@ -92,7 +92,7 @@ Crea `app/utils/seed.py` con funzione `seed_initial_data()`:
 # Istruttori
 instructors = [
     {"name": "Angelo", "username": "angelo"},
-    {"name": "Connie", "username": "connie"},
+    {"name": "Conny", "username": "connie"},
     {"name": "Santa", "username": "santa"},
     {"name": "Simona", "username": "simona"},
 ]
@@ -102,7 +102,7 @@ disciplines = [
     {"name": "Agility",           "instructor": "Angelo",  "slot_duration": 30},
     {"name": "Swim Dog Sport",    "instructor": "Angelo",  "slot_duration": 40,
      "active_from": "06-01", "active_until": "09-30"},  # stagionale
-    {"name": "Agility",           "instructor": "Connie",  "slot_duration": 30},
+    {"name": "Agility",           "instructor": "Conny",  "slot_duration": 30},
     {"name": "Educazione di Base","instructor": "Santa",   "slot_duration": 60},
     {"name": "Hoopers",           "instructor": "Santa",   "slot_duration": 30},
     {"name": "Rally Obedience",   "instructor": "Santa",   "slot_duration": 30},
@@ -278,7 +278,7 @@ Aggiungi link "Password dimenticata" nel login admin → flusso email reset (usa
 **Step 1 — Scelta istruttore:**
 Grid di card istruttori (solo quelli con discipline attive):
 ```
-[Angelo]          [Connie]
+[Angelo]          [Conny]
 Agility           Agility
 Swim Dog Sport
 

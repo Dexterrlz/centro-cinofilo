@@ -342,7 +342,7 @@
 
 # | Angelo     | Swim Dog Sport       | 40 min      | 8 (stagionale)    |
 
-# | Connie     | Agility              | 30 min      | 8                 |
+# | Conny     | Agility              | 30 min      | 8                 |
 
 # | Santa      | Educazione di Base   | 60 min      | 8                 |
 
@@ -500,7 +500,7 @@
 
 # 
 
-# \- \*\*4 account separati:\*\* Angelo, Connie, Santa, Simona
+# \- \*\*4 account separati:\*\* Angelo, Conny, Santa, Simona
 
 # \- Stesse viste e permessi per tutti (nessuna restrizione per ruolo)
 

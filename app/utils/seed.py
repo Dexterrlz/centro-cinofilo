@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 INSTRUCTORS_DATA = [
     {"name": "Angelo", "username": "angelo"},
-    {"name": "Connie", "username": "connie"},
+    {"name": "Conny", "username": "connie"},
     {"name": "Santa", "username": "santa"},
     {"name": "Simona", "username": "simona"},
 ]
@@ -22,7 +22,7 @@ DISCIPLINES_DATA = [
     {"name": "Agility", "instructor": "Angelo", "slot_duration": 30},
     {"name": "Swim Dog Sport", "instructor": "Angelo", "slot_duration": 40,
      "active_from": (6, 1), "active_until": (9, 30)},
-    {"name": "Agility", "instructor": "Connie", "slot_duration": 30},
+    {"name": "Agility", "instructor": "Conny", "slot_duration": 30},
     {"name": "Educazione di Base", "instructor": "Santa", "slot_duration": 60},
     {"name": "Hoopers", "instructor": "Santa", "slot_duration": 30},
     {"name": "Rally Obedience", "instructor": "Santa", "slot_duration": 30},
