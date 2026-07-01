@@ -3,6 +3,7 @@ from typing import List, Set, Tuple
 from sqlalchemy.orm import Session
 
 from app.models.appointment import Appointment, AppointmentStatus
+from app.models.discipline import Discipline
 from app.repositories.availability_rule_repository import AvailabilityRuleRepository
 from app.repositories.appointment_repository import AppointmentRepository
 from app.repositories.blocked_date_repository import BlockedDateRepository
@@ -183,6 +184,105 @@ class AvailabilityService:
 
     def is_slot_available(self, discipline_id: int, check_date: date, slot_time: time) -> bool:
         return slot_time in self.get_available_slots(discipline_id, check_date)
+
+
+def get_available_slots_for_group(
+    db: Session,
+    group_id: int,
+    date_from: date,
+    date_to: date,
+) -> list:
+    """
+    Genera tutti gli slot disponibili per un gruppo di discipline in un range di date.
+    Per ogni orario, lo include una sola volta se almeno un istruttore del gruppo ha quel slot libero.
+    """
+    from collections import defaultdict
+    from sqlalchemy.orm import joinedload
+    from app.models.discipline_group import DisciplineGroup
+    from app.repositories.blocked_date_repository import BlockedDateRepository
+
+    blocked_repo = BlockedDateRepository(db)
+    rule_repo = AvailabilityRuleRepository(db)
+    appt_repo = AppointmentRepository(db)
+
+    group = (
+        db.query(DisciplineGroup)
+        .options(
+            joinedload(DisciplineGroup.disciplines).joinedload(Discipline.instructor)
+        )
+        .filter(DisciplineGroup.id == group_id)
+        .first()
+    )
+    if not group:
+        return []
+
+    results = []
+    current = date_from
+    while current <= date_to:
+        if blocked_repo.is_blocked(None, current):
+            current += timedelta(days=1)
+            continue
+
+        slot_map = defaultdict(lambda: {'available': 0, 'total': 0})
+
+        for discipline in group.disciplines:
+            if not discipline.is_active:
+                continue
+
+            avail_svc = AvailabilityService(db)
+            if not avail_svc._is_within_season(discipline, current):
+                continue
+
+            if blocked_repo.is_blocked(discipline.id, current):
+                continue
+
+            weekday = current.weekday()
+            rules = rule_repo.get_by_discipline_and_day(discipline.id, weekday)
+            if not rules:
+                continue
+
+            duration = discipline.slot_duration_minutes or DEFAULT_SLOT_DURATION
+            for rule in rules:
+                for slot_start in generate_slots(rule.start_time, rule.end_time, duration):
+                    slot_end = (
+                        datetime.combine(current, slot_start) + timedelta(minutes=duration)
+                    ).time()
+                    key = (slot_start, slot_end)
+                    slot_map[key]['total'] += 1
+
+                    existing = appt_repo.get_by_slot(
+                        discipline_id=discipline.id,
+                        instructor_id=discipline.instructor_id,
+                        appointment_date=current,
+                        start_time=slot_start,
+                    )
+                    instr_free = instructor_is_available(
+                        discipline.instructor_id, current, slot_start, duration, db
+                    )
+                    if not existing and instr_free:
+                        slot_map[key]['available'] += 1
+
+        existing_bookings = appt_repo.get_by_instructor_and_date_for_group(group_id, current)
+        suggested_starts = {a.end_time for a in existing_bookings}
+
+        min_bookable_dt = datetime.now() + timedelta(hours=MIN_ADVANCE_HOURS)
+        for (start, end), info in sorted(slot_map.items()):
+            if info['available'] == 0:
+                continue
+            if datetime.combine(current, start) < min_bookable_dt:
+                continue
+            results.append({
+                'date': current,
+                'start': start,
+                'end': end,
+                'available_count': info['available'],
+                'total_capacity': info['total'],
+                'is_suggested': start in suggested_starts,
+            })
+
+        current += timedelta(days=1)
+
+    return results
 
 
 def build_daily_timeline(db: Session, instructor, target_date: date) -> list:

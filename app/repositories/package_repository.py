@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.models.package import Package
+from app.models.discipline_group import DisciplineGroup
 
 
 class PackageRepository:
@@ -132,3 +133,60 @@ class PackageRepository:
         self.db.commit()
         self.db.refresh(pkg)
         return pkg
+
+    def get_active_for_user_and_group(self, user_id: int, group_id: int) -> Optional[Package]:
+        """Pacchetto attivo per utente + gruppo disciplina (es. Agility)."""
+        return (
+            self.db.query(Package)
+            .filter(
+                Package.user_id == user_id,
+                Package.group_id == group_id,
+                Package.is_active == True,
+            )
+            .first()
+        )
+
+    def get_active_for_user_and_discipline(
+        self, user_id: int, discipline_id: int, instructor_id: int
+    ) -> Optional[Package]:
+        """Pacchetto attivo per utente + disciplina singola (non di gruppo)."""
+        return (
+            self.db.query(Package)
+            .filter(
+                Package.user_id == user_id,
+                Package.discipline_id == discipline_id,
+                Package.instructor_id == instructor_id,
+                Package.is_active == True,
+            )
+            .first()
+        )
+
+    def create_for_group(self, user_id: int, group_id: int, total_lessons: int = 8) -> Package:
+        """Crea pacchetto per disciplina condivisa (senza instructor_id fisso)."""
+        pkg = Package(
+            user_id=user_id,
+            group_id=group_id,
+            discipline_id=None,
+            instructor_id=None,
+            total_lessons=total_lessons,
+            lessons_completed=0,
+            is_active=True,
+            activated_at=datetime.utcnow(),
+        )
+        self.db.add(pkg)
+        self.db.commit()
+        self.db.refresh(pkg)
+        return pkg
+
+    def get_all_for_user_with_group(self, user_id: int) -> List[Package]:
+        """Tutti i pacchetti di un utente con relazioni precaricate (include pacchetti di gruppo)."""
+        return (
+            self.db.query(Package)
+            .options(
+                joinedload(Package.discipline),
+                joinedload(Package.instructor),
+                joinedload(Package.group),
+            )
+            .filter(Package.user_id == user_id)
+            .all()
+        )

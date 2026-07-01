@@ -10,11 +10,13 @@ class AppointmentRepository:
         self.db = db
 
     def get_by_id(self, appointment_id: int) -> Optional[Appointment]:
+        from app.models.discipline import Discipline
+        from app.models.discipline_group import DisciplineGroup
         return (
             self.db.query(Appointment)
             .options(
                 joinedload(Appointment.user),
-                joinedload(Appointment.discipline),
+                joinedload(Appointment.discipline).joinedload(Discipline.group),
                 joinedload(Appointment.instructor),
             )
             .filter(Appointment.id == appointment_id)
@@ -22,11 +24,12 @@ class AppointmentRepository:
         )
 
     def get_by_cancellation_token(self, token: str) -> Optional[Appointment]:
+        from app.models.discipline import Discipline
         return (
             self.db.query(Appointment)
             .options(
                 joinedload(Appointment.user),
-                joinedload(Appointment.discipline),
+                joinedload(Appointment.discipline).joinedload(Discipline.group),
                 joinedload(Appointment.instructor),
             )
             .filter(Appointment.cancellation_token == token)
@@ -179,10 +182,11 @@ class AppointmentRepository:
         user_search: Optional[str] = None,
     ) -> List[Appointment]:
         from app.models.user import User
+        from app.models.discipline import Discipline
 
         query = self.db.query(Appointment).options(
             joinedload(Appointment.user),
-            joinedload(Appointment.discipline),
+            joinedload(Appointment.discipline).joinedload(Discipline.group),
             joinedload(Appointment.instructor),
         )
         if status:
@@ -212,6 +216,61 @@ class AppointmentRepository:
                 )
             )
             .count()
+        )
+
+    def count_weekly_for_user_group(
+        self, user_id: int, group_id: int, ref_date: date
+    ) -> int:
+        """
+        Conta le prenotazioni attive dell'utente per un gruppo disciplina
+        nella settimana del calendario contenente ref_date.
+        """
+        from datetime import timedelta
+        from app.models.discipline_group import DisciplineGroup
+
+        week_start = ref_date - timedelta(days=ref_date.weekday())
+        week_end = week_start + timedelta(days=6)
+
+        group = self.db.query(DisciplineGroup).filter(DisciplineGroup.id == group_id).first()
+        disc_ids = [d.id for d in group.disciplines] if group else []
+        if not disc_ids:
+            return 0
+
+        return (
+            self.db.query(Appointment)
+            .filter(
+                Appointment.user_id == user_id,
+                Appointment.discipline_id.in_(disc_ids),
+                Appointment.appointment_date >= week_start,
+                Appointment.appointment_date <= week_end,
+                Appointment.status.in_(
+                    [AppointmentStatus.pending, AppointmentStatus.confirmed]
+                ),
+            )
+            .count()
+        )
+
+    def get_by_instructor_and_date_for_group(
+        self, group_id: int, ref_date: date
+    ) -> List[Appointment]:
+        """Prenotazioni esistenti nel giorno per tutte le discipline del gruppo."""
+        from app.models.discipline_group import DisciplineGroup
+
+        group = self.db.query(DisciplineGroup).filter(DisciplineGroup.id == group_id).first()
+        disc_ids = [d.id for d in group.disciplines] if group else []
+        if not disc_ids:
+            return []
+
+        return (
+            self.db.query(Appointment)
+            .filter(
+                Appointment.discipline_id.in_(disc_ids),
+                Appointment.appointment_date == ref_date,
+                Appointment.status.in_(
+                    [AppointmentStatus.pending, AppointmentStatus.confirmed]
+                ),
+            )
+            .all()
         )
 
     def count_upcoming(self) -> int:

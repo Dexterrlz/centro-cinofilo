@@ -1,6 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload
 from app.models.discipline import Discipline
+from app.models.instructor import Instructor
 
 
 class DisciplineRepository:
@@ -63,3 +64,21 @@ class DisciplineRepository:
 
     def count(self) -> int:
         return self.db.query(Discipline).count()
+
+    def get_direct_without_group(self) -> List[Discipline]:
+        """
+        Discipline attive senza gruppo (es. Swim Dog Sport) di istruttori
+        che non hanno una tile propria in homepage (Angelo, Conny).
+        """
+        hidden_instructors = ["Angelo", "Conny"]
+        return (
+            self.db.query(Discipline)
+            .join(Instructor)
+            .filter(
+                Discipline.is_active == True,
+                Discipline.group_id == None,
+                Instructor.name.in_(hidden_instructors),
+            )
+            .options(joinedload(Discipline.instructor))
+            .all()
+        )

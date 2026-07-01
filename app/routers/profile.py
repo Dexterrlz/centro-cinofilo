@@ -25,7 +25,7 @@ register_date_filters(templates)
 
 @router.get("", response_class=HTMLResponse)
 async def profile_page(request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    packages = PackageRepository(db).get_all_for_user(user.id)
+    packages = PackageRepository(db).get_all_for_user_with_group(user.id)
     return templates.TemplateResponse(
         request, "profile/index.html",
         {"current_user": user, "csrf_token": get_csrf_token(request), "packages": packages},
@@ -75,7 +75,7 @@ async def bookings_page(request: Request, user: User = Depends(require_auth), db
     past_raw = repo.get_appointments_by_user(user.id, [AppointmentStatus.completed])
     past = sorted(past_raw, key=lambda x: (x.appointment_date, x.start_time), reverse=True)
 
-    packages = PackageRepository(db).get_all_for_user(user.id)
+    packages = PackageRepository(db).get_all_for_user_with_group(user.id)
 
     return templates.TemplateResponse(
         request, "profile/bookings.html",

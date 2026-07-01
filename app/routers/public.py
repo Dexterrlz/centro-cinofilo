@@ -1,36 +1,192 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from datetime import time as time_type
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.repositories.discipline_group_repository import DisciplineGroupRepository
 from app.repositories.discipline_repository import DisciplineRepository
 from app.repositories.instructor_repository import InstructorRepository
 from app.repositories.package_repository import PackageRepository
-from app.services.availability_service import AvailabilityService, get_booking_window
+from app.services.availability_service import (
+    AvailabilityService,
+    get_available_slots_for_group,
+    get_booking_window,
+)
+from app.services.booking_service import BookingService
 from app.utils.auth import require_auth
-from app.utils.csrf import get_csrf_token
+from app.utils.csrf import get_csrf_token, validate_csrf
 from app.utils.date_it import register_date_filters
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 register_date_filters(templates)
 
-MAX_RANGE_DAYS = 13  # ampiezza massima della finestra prenotabile (2 settimane)
+MAX_RANGE_DAYS = 13
 
 
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    """Step 1 del flusso prenotazione: scelta istruttore."""
-    instructors = InstructorRepository(db).get_all_active_with_disciplines()
-    instructors = [i for i in instructors if any(d.is_active for d in i.disciplines)]
+    """Homepage: tile Agility (gruppo), Swim Dog Sport, Santa e Simona."""
+    agility_group = DisciplineGroupRepository(db).get_by_name("agility")
+    direct_disciplines = DisciplineRepository(db).get_direct_without_group()
+    hidden = ["Angelo", "Conny"]
+    visible_instructors = InstructorRepository(db).get_all_active_excluding(hidden)
+    visible_instructors = [i for i in visible_instructors if any(d.is_active for d in i.disciplines)]
+
+    user_agility_package = None
+    if agility_group:
+        user_agility_package = PackageRepository(db).get_active_for_user_and_group(
+            user.id, agility_group.id
+        )
+        if user_agility_package is None:
+            # Cerca anche pacchetti esauriti per mostrare lo stato
+            from app.models.package import Package
+            user_agility_package = (
+                db.query(Package)
+                .filter(
+                    Package.user_id == user.id,
+                    Package.group_id == agility_group.id,
+                )
+                .order_by(Package.created_at.desc())
+                .first()
+            )
+
     return templates.TemplateResponse(
         request, "index.html",
-        {"instructors": instructors, "csrf_token": get_csrf_token(request), "current_user": user},
+        {
+            "agility_group": agility_group,
+            "direct_disciplines": direct_disciplines,
+            "visible_instructors": visible_instructors,
+            "user_agility_package": user_agility_package,
+            "csrf_token": get_csrf_token(request),
+            "current_user": user,
+        },
+    )
+
+
+@router.get("/agility", response_class=HTMLResponse)
+async def agility_slot_selection(
+    request: Request,
+    user: User = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    """Pagina selezione slot per il gruppo Agility."""
+    agility_group = DisciplineGroupRepository(db).get_by_name("agility")
+    if not agility_group:
+        return templates.TemplateResponse(request, "errors/404.html", status_code=404)
+
+    window_start, window_end = get_booking_window()
+
+    package = PackageRepository(db).get_active_for_user_and_group(user.id, agility_group.id)
+    if package is None:
+        from app.models.package import Package
+        package = (
+            db.query(Package)
+            .filter(Package.user_id == user.id, Package.group_id == agility_group.id)
+            .order_by(Package.created_at.desc())
+            .first()
+        )
+
+    if package and (not package.is_active or package.lessons_completed >= package.total_lessons):
+        return templates.TemplateResponse(
+            request, "booking/agility_slots.html",
+            {
+                "group": agility_group,
+                "package_exhausted": True,
+                "package": package,
+                "current_user": user,
+                "csrf_token": get_csrf_token(request),
+            },
+        )
+
+    slots = get_available_slots_for_group(
+        db=db,
+        group_id=agility_group.id,
+        date_from=window_start,
+        date_to=window_end,
+    )
+
+    return templates.TemplateResponse(
+        request, "booking/agility_slots.html",
+        {
+            "group": agility_group,
+            "slots": slots,
+            "package": package,
+            "window_start": window_start,
+            "window_end": window_end,
+            "has_availability": bool(slots),
+            "csrf_token": get_csrf_token(request),
+            "current_user": user,
+        },
+    )
+
+
+@router.post("/agility/prenota", response_class=HTMLResponse)
+async def agility_book(request: Request, user: User = Depends(require_auth), db: Session = Depends(get_db)):
+    """Crea prenotazione Agility con assegnazione automatica istruttore."""
+    await validate_csrf(request)
+
+    form = await request.form()
+    date_str = form.get("date", "")
+    start_time_str = form.get("start_time", "")
+    end_time_str = form.get("end_time", "")
+    group_id_raw = form.get("group_id", "")
+
+    try:
+        appt_date = date.fromisoformat(date_str)
+        h, m = start_time_str.split(":")
+        start = time_type(int(h), int(m))
+        h2, m2 = end_time_str.split(":")
+        end = time_type(int(h2), int(m2))
+        group_id = int(group_id_raw)
+    except (ValueError, TypeError, AttributeError):
+        return templates.TemplateResponse(
+            request, "booking/agility_slots.html",
+            {
+                "error": "Dati di prenotazione non validi. Torna indietro e riprova.",
+                "current_user": user,
+                "csrf_token": get_csrf_token(request),
+            },
+            status_code=422,
+        )
+
+    result = BookingService(db).create_booking_for_group(
+        group_id=group_id,
+        appointment_date=appt_date,
+        start_time=start,
+        end_time=end,
+        user_id=user.id,
+    )
+
+    if not result["success"]:
+        agility_group = DisciplineGroupRepository(db).get_by_name("agility")
+        window_start, window_end = get_booking_window()
+        slots = get_available_slots_for_group(
+            db=db, group_id=group_id,
+            date_from=window_start, date_to=window_end,
+        )
+        return templates.TemplateResponse(
+            request, "booking/agility_slots.html",
+            {
+                "group": agility_group,
+                "slots": slots,
+                "has_availability": bool(slots),
+                "window_start": window_start,
+                "window_end": window_end,
+                "error": result["message"],
+                "current_user": user,
+                "csrf_token": get_csrf_token(request),
+            },
+            status_code=422,
+        )
+
+    return RedirectResponse(
+        url=f"/prenotazione/{result['appointment'].cancellation_token}", status_code=303
     )
 
 
@@ -143,7 +299,7 @@ async def booking_confirm_page(
                 "window_start": window_start,
                 "window_end": window_end,
                 "has_availability": bool(available_dates),
-                "error": "Questo orario non e piu disponibile. Scegli un altro slot.",
+                "error": "Questo orario non è più disponibile. Scegli un altro slot.",
                 "csrf_token": get_csrf_token(request),
                 "current_user": user,
             },
@@ -180,7 +336,7 @@ async def booking_confirmed_page(request: Request, token: str, db: Session = Dep
 
 @router.get("/cancella/{token}", response_class=HTMLResponse)
 async def cancel_page(request: Request, token: str, db: Session = Depends(get_db)):
-    from datetime import datetime
+    from datetime import datetime as dt
     from app.repositories.appointment_repository import AppointmentRepository
     from app.models.appointment import AppointmentStatus
 
@@ -190,7 +346,7 @@ async def cancel_page(request: Request, token: str, db: Session = Depends(get_db
 
     already_cancelled = appointment.status == AppointmentStatus.cancelled
     hours_until = (
-        (datetime.combine(appointment.appointment_date, appointment.start_time) - datetime.now()).total_seconds() / 3600
+        (dt.combine(appointment.appointment_date, appointment.start_time) - dt.now()).total_seconds() / 3600
     )
     can_cancel = not already_cancelled and hours_until >= 24
 

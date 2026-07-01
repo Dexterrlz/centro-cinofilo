@@ -45,9 +45,13 @@ class UserRepository:
 
     def get_appointments_by_user(self, user_id: int, statuses: list) -> list:
         from app.models.appointment import Appointment
+        from app.models.discipline import Discipline
         return (
             self.db.query(Appointment)
-            .options(joinedload(Appointment.discipline), joinedload(Appointment.instructor))
+            .options(
+                joinedload(Appointment.discipline).joinedload(Discipline.group),
+                joinedload(Appointment.instructor),
+            )
             .filter(
                 Appointment.user_id == user_id,
                 Appointment.status.in_(statuses),

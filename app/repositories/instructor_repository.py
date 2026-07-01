@@ -38,6 +38,19 @@ class InstructorRepository:
     def get_all(self) -> List[Instructor]:
         return self.db.query(Instructor).order_by(Instructor.name).all()
 
+    def get_all_active_excluding(self, excluded_names: list) -> List[Instructor]:
+        """Istruttori attivi escludendo quelli con i nomi indicati (per homepage)."""
+        return (
+            self.db.query(Instructor)
+            .options(joinedload(Instructor.disciplines))
+            .filter(
+                Instructor.is_active == True,
+                ~Instructor.name.in_(excluded_names),
+            )
+            .order_by(Instructor.name)
+            .all()
+        )
+
     def update_password(self, instructor_id: int, password_hash: str) -> Optional[Instructor]:
         instructor = self.get_by_id(instructor_id)
         if instructor:

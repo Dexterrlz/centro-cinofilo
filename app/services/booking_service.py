@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.repositories.appointment_repository import AppointmentRepository
+from app.repositories.discipline_group_repository import DisciplineGroupRepository
 from app.repositories.discipline_repository import DisciplineRepository
 from app.repositories.package_repository import PackageRepository
 from app.repositories.user_repository import UserRepository
@@ -35,6 +36,7 @@ class BookingService:
         self.db = db
         self.appointment_repo = AppointmentRepository(db)
         self.discipline_repo = DisciplineRepository(db)
+        self.group_repo = DisciplineGroupRepository(db)
         self.package_repo = PackageRepository(db)
         self.user_repo = UserRepository(db)
         self.availability_service = AvailabilityService(db)
@@ -159,6 +161,121 @@ class BookingService:
             self.db.rollback()
             logger.error("Errore creazione prenotazione: %s", exc)
             return {"success": False, "message": "Si e verificato un errore. Riprova."}
+
+    def create_booking_for_group(
+        self,
+        group_id: int,
+        appointment_date: date,
+        start_time: time,
+        end_time: time,
+        user_id: int,
+    ) -> dict:
+        """
+        Crea una prenotazione Agility con assegnazione automatica dell'istruttore.
+        Trova il primo istruttore con lo slot libero e gestisce il pacchetto di gruppo.
+        """
+        try:
+            group = self.group_repo.get_by_id(group_id)
+            if not group:
+                return {"success": False, "message": "Gruppo disciplina non trovato."}
+
+            appointment_dt = datetime.combine(appointment_date, start_time)
+            if appointment_dt < datetime.now() + timedelta(hours=MIN_ADVANCE_HOURS):
+                return {
+                    "success": False,
+                    "message": f"Le prenotazioni richiedono almeno {MIN_ADVANCE_HOURS} ore di preavviso.",
+                }
+
+            assigned_discipline = None
+            for discipline in group.disciplines:
+                if not discipline.is_active:
+                    continue
+                if not self.availability_service._is_within_season(discipline, appointment_date):
+                    continue
+                if not self.availability_service.is_slot_available(discipline.id, appointment_date, start_time):
+                    continue
+                duration = discipline.slot_duration_minutes or DEFAULT_SLOT_DURATION
+                if not instructor_is_available(
+                    discipline.instructor_id, appointment_date, start_time, duration, self.db
+                ):
+                    continue
+                existing = self.appointment_repo.get_slot_with_lock(
+                    discipline.id, appointment_date, start_time
+                )
+                if existing:
+                    continue
+                assigned_discipline = discipline
+                break
+
+            if not assigned_discipline:
+                return {"success": False, "message": "Questo orario non è più disponibile."}
+
+            weekly_count = self.appointment_repo.count_weekly_for_user_group(
+                user_id, group_id, appointment_date
+            )
+            if weekly_count >= MAX_LESSONS_PER_WEEK:
+                return {
+                    "success": False,
+                    "message": f"Hai già raggiunto il limite di {MAX_LESSONS_PER_WEEK} prenotazioni Agility per questa settimana.",
+                }
+
+            package = self.package_repo.get_active_for_user_and_group(user_id, group_id)
+            if package is None:
+                package = self.package_repo.create_for_group(user_id, group_id, total_lessons=8)
+            elif not package.is_active or package.lessons_completed >= package.total_lessons:
+                return {
+                    "success": False,
+                    "message": "Hai esaurito le lezioni del tuo pacchetto Agility. Contatta il centro per rinnovarlo.",
+                }
+
+            duration = assigned_discipline.slot_duration_minutes or DEFAULT_SLOT_DURATION
+            cancellation_token = secrets.token_urlsafe(32)
+
+            appointment = self.appointment_repo.create(
+                discipline_id=assigned_discipline.id,
+                user_id=user_id,
+                instructor_id=assigned_discipline.instructor_id,
+                package_id=package.id,
+                appointment_date=appointment_date,
+                start_time=start_time,
+                end_time=end_time,
+                cancellation_token=cancellation_token,
+            )
+            self.db.commit()
+            self.db.refresh(appointment)
+            self.db.refresh(appointment.discipline)
+            self.db.refresh(appointment.user)
+
+            logger.info(
+                "Prenotazione Agility creata: id=%s istruttore=%s data=%s ora=%s user=%s",
+                appointment.id,
+                assigned_discipline.instructor.name if assigned_discipline.instructor else "—",
+                appointment_date,
+                start_time,
+                appointment.user.email,
+            )
+
+            EmailService.send_booking_confirmation(
+                email=appointment.user.email,
+                first_name=appointment.user.first_name,
+                discipline_name="Agility",
+                appointment_date=appointment_date.strftime("%d/%m/%Y"),
+                start_time=start_time.strftime("%H:%M"),
+                cancellation_token=cancellation_token,
+            )
+
+            return {"success": True, "appointment": appointment}
+
+        except IntegrityError:
+            self.db.rollback()
+            return {
+                "success": False,
+                "message": "Questo orario è stato appena prenotato. Scegli un altro slot.",
+            }
+        except Exception as exc:
+            self.db.rollback()
+            logger.error("Errore creazione prenotazione Agility: %s", exc)
+            return {"success": False, "message": "Si è verificato un errore. Riprova."}
 
     def cancel_booking(self, cancellation_token: str) -> dict:
         """Cancella una prenotazione tramite token, rispettando il limite di 24 ore."""

@@ -7,6 +7,7 @@ import bcrypt
 
 from app.database import SessionLocal
 from app.models.discipline import Discipline
+from app.models.discipline_group import DisciplineGroup
 from app.models.instructor import Instructor
 
 logger = logging.getLogger(__name__)
@@ -19,10 +20,10 @@ INSTRUCTORS_DATA = [
 ]
 
 DISCIPLINES_DATA = [
-    {"name": "Agility", "instructor": "Angelo", "slot_duration": 30},
+    {"name": "Agility Campo 1", "instructor": "Angelo", "slot_duration": 30},
     {"name": "Swim Dog Sport", "instructor": "Angelo", "slot_duration": 40,
      "active_from": (6, 1), "active_until": (9, 30)},
-    {"name": "Agility", "instructor": "Conny", "slot_duration": 30},
+    {"name": "Agility Campo 2", "instructor": "Conny", "slot_duration": 30},
     {"name": "Educazione di Base", "instructor": "Santa", "slot_duration": 60},
     {"name": "Hoopers", "instructor": "Santa", "slot_duration": 30},
     {"name": "Rally Obedience", "instructor": "Santa", "slot_duration": 30},
@@ -41,7 +42,7 @@ def _hash_password(password: str) -> str:
 
 
 def seed_initial_data() -> None:
-    """Crea istruttori e discipline iniziali se non esistono già.
+    """Crea istruttori, discipline e il gruppo Agility se non esistono già.
 
     Le password in chiaro vengono generate al volo e stampate a video
     una sola volta: non vengono salvate nel codice né nei log persistenti.
@@ -71,6 +72,7 @@ def seed_initial_data() -> None:
         print("=" * 60 + "\n")
 
         current_year = date.today().year
+        disciplines_by_name = {}
         for data in DISCIPLINES_DATA:
             instructor = instructors_by_name[data["instructor"]]
             active_from = active_until = None
@@ -81,18 +83,30 @@ def seed_initial_data() -> None:
                 month, day = data["active_until"]
                 active_until = date(current_year, month, day)
 
-            db.add(Discipline(
+            disc = Discipline(
                 name=data["name"],
                 instructor_id=instructor.id,
                 slot_duration_minutes=data["slot_duration"],
                 is_active=True,
                 active_from=active_from,
                 active_until=active_until,
-            ))
+            )
+            db.add(disc)
+            db.flush()
+            disciplines_by_name[data["name"]] = disc
+
+        # Crea il gruppo Agility e associa Campo 1 e Campo 2
+        agility_group = DisciplineGroup(name="agility", display_name="Agility")
+        db.add(agility_group)
+        db.flush()
+
+        for disc_name in ("Agility Campo 1", "Agility Campo 2"):
+            if disc_name in disciplines_by_name:
+                disciplines_by_name[disc_name].group_id = agility_group.id
 
         db.commit()
         logger.info(
-            "Seed completato: %d istruttori, %d discipline.",
+            "Seed completato: %d istruttori, %d discipline, 1 gruppo Agility.",
             len(INSTRUCTORS_DATA), len(DISCIPLINES_DATA),
         )
     finally:

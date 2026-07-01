@@ -17,9 +17,13 @@
   <div class="summary-card" style="margin-bottom:1.75rem;text-align:left;">
     <div class="summary-row">
       <span class="summary-label">Disciplina</span>
+      {% if appointment.discipline.group_id %}
+      <span class="summary-value">{{ appointment.discipline.group.display_name if appointment.discipline.group else appointment.discipline.name }}</span>
+      {% else %}
       <span class="summary-value">{{ appointment.discipline.name }}</span>
+      {% endif %}
     </div>
-    {% if appointment.instructor %}
+    {% if appointment.instructor and not appointment.discipline.group_id %}
     <div class="summary-row">
       <span class="summary-label">Istruttore</span>
       <span class="summary-value">{{ appointment.instructor.name }}</span>
@@ -49,9 +53,15 @@
     <a href="/" class="btn-primary" style="font-size:15px;">
       Torna alla home
     </a>
+    {% if appointment.discipline.group_id %}
+    <a href="/agility" class="btn-secondary" style="font-size:15px;">
+      Prenota un'altra lezione Agility
+    </a>
+    {% else %}
     <a href="/prenota/{{ appointment.discipline_id }}" class="btn-secondary" style="font-size:15px;">
       Prenota un'altra lezione
     </a>
+    {% endif %}
     <a href="/cancella/{{ appointment.cancellation_token }}"
        style="font-size:13px;color:var(--color-muted);text-decoration:none;padding:8px;margin-top:4px;">
       Cancella questa prenotazione

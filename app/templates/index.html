@@ -25,25 +25,72 @@
   </a>
 </section>
 
-{# Decorazione SVG zampe tra hero e sezione discipline #}
+{# Decorazione #}
 <div style="text-align:center;font-size:1.5rem;opacity:0.25;margin:-0.5rem 0 1rem;letter-spacing:1.5rem;">
   🐾🐾🐾
 </div>
 
-{# ── Istruttori ────────────────────────────────────────────── #}
+{# ── Discipline / Istruttori ───────────────────────────────── #}
 <section id="discipline" class="section" style="background:var(--color-white);">
   <div class="page-wrapper-wide">
-    <h2 class="section-title">Scegli l'istruttore</h2>
-    <p class="section-subtitle">Ogni istruttore segue discipline specifiche — scegli con chi vuoi prenotare.</p>
+    <h2 class="section-title">Cosa vuoi fare?</h2>
+    <p class="section-subtitle">Scegli la disciplina o l'istruttore con cui prenotare la tua lezione.</p>
 
     {% set disc_icons = {
-      'Agility': '🏃', 'Swim Dog Sport': '🏊', 'Educazione di Base': '🦴',
+      'Agility': '🏃', 'Agility Campo 1': '🏃', 'Agility Campo 2': '🏃',
+      'Swim Dog Sport': '🏊', 'Educazione di Base': '🦴',
       'Hoopers': '🎯', 'Rally Obedience': '🎀', 'Nosework': '👃'
     } %}
 
-    {% if instructors %}
     <div class="grid grid-cols-2 gap-4 sm:gap-5" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
-      {% for i in instructors %}
+
+      {# ── Tile Agility (gruppo) ──────────────────────────── #}
+      {% if agility_group %}
+      <div class="card-discipline" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+        <span class="disc-icon">🏃</span>
+        <h3>{{ agility_group.display_name }}</h3>
+
+        {% if user_agility_package %}
+        {% set pkg = user_agility_package %}
+        {% set pct = ((pkg.lessons_completed / pkg.total_lessons) * 100) | int %}
+        <div style="width:100%;margin:8px 0 4px;">
+          <div style="height:5px;background:#f0f0f0;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:{{ pct }}%;background:{% if pkg.is_active %}var(--color-primary){% else %}#D32F2F{% endif %};border-radius:99px;"></div>
+          </div>
+          <p style="font-size:12px;color:{% if pkg.is_active %}var(--color-primary){% else %}#C62828{% endif %};margin:4px 0 0;font-weight:600;">
+            {{ pkg.lessons_completed }}/{{ pkg.total_lessons }} lezioni
+            {% if not pkg.is_active %} — Esaurito{% endif %}
+          </p>
+        </div>
+        {% endif %}
+
+        {% if user_agility_package and not user_agility_package.is_active %}
+        <p style="font-size:12px;color:#C62828;margin:4px 0 8px;">
+          Pacchetto esaurito — contatta il centro per rinnovarlo
+        </p>
+        <a href="mailto:asdiamocilazampa@libero.it" class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:6px;opacity:0.6;pointer-events:none;">
+          Scegli
+        </a>
+        {% else %}
+        <a href="/agility" class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:10px;">Scegli</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# ── Discipline dirette (Swim Dog Sport) ────────────── #}
+      {% for disc in direct_disciplines %}
+      <a href="/prenota/{{ disc.id }}" class="card-discipline">
+        <span class="disc-icon">{{ disc_icons.get(disc.name, '⭐') }}</span>
+        <h3>{{ disc.name }}</h3>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--color-muted);">
+          Slot da {{ disc.slot_duration_minutes or 30 }} minuti
+        </p>
+        <span class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:10px;">Scegli</span>
+      </a>
+      {% endfor %}
+
+      {# ── Istruttori visibili (Santa, Simona) ────────────── #}
+      {% for i in visible_instructors %}
       <a href="/istruttore/{{ i.id }}" class="card-discipline">
         <span class="disc-icon">👤</span>
         <h3>{{ i.name }}</h3>
@@ -53,12 +100,14 @@
         <span class="btn-primary" style="font-size:14px;padding:10px 22px;margin-top:10px;">Scegli</span>
       </a>
       {% endfor %}
+
+      {% if not agility_group and not direct_disciplines and not visible_instructors %}
+      <div class="card" style="padding:3rem;text-align:center;grid-column:1/-1;">
+        <p style="color:var(--color-muted);font-size:15px;">Nessuna disciplina disponibile al momento. Torna presto!</p>
+      </div>
+      {% endif %}
+
     </div>
-    {% else %}
-    <div class="card" style="padding:3rem;text-align:center;">
-      <p style="color:var(--color-muted);font-size:15px;">Nessun istruttore disponibile al momento. Torna presto!</p>
-    </div>
-    {% endif %}
   </div>
 </section>
 

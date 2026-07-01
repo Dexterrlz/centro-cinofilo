@@ -1,4 +1,5 @@
 from app.models.instructor import Instructor
+from app.models.discipline_group import DisciplineGroup
 from app.models.discipline import Discipline
 from app.models.user import User
 from app.models.package import Package
@@ -9,6 +10,7 @@ from app.models.admin_user import AdminUser
 
 __all__ = [
     "Instructor",
+    "DisciplineGroup",
     "Discipline",
     "User",
     "Package",

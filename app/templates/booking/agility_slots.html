@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Scegli orario — Agility{% endblock %}
+
+{% block nav_extra %}
+<a href="/" class="nav-link" style="display:inline-flex;align-items:center;gap:4px;">
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+  Indietro
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="padding-top:2rem;padding-bottom:3rem;">
+
+  {# ── Breadcrumb ─────────────────────────────────────── #}
+  <nav class="breadcrumb">
+    <a href="/">Home</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Agility</span>
+  </nav>
+
+  {# ── Intestazione ────────────────────────────────────── #}
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.75rem;">
+    <div style="width:48px;height:48px;border-radius:14px;background:var(--color-cream-dark);border:1.5px solid var(--color-cipria);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
+      🏃
+    </div>
+    <div>
+      <h1 style="font-family:'Poppins',sans-serif;font-size:1.6rem;color:var(--color-choco);margin:0 0 2px;font-weight:600;">
+        Agility
+      </h1>
+      <p style="color:var(--color-muted);font-size:13px;margin:0;">Slot da 30 minuti · istruttore assegnato automaticamente</p>
+    </div>
+  </div>
+
+  {% if package_exhausted %}
+
+  {# ── Pacchetto esaurito ───────────────────────────────── #}
+  <div class="card" style="padding:3rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+      Pacchetto esaurito
+    </h2>
+    <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
+      Hai completato tutte le {{ package.total_lessons }} lezioni del tuo pacchetto Agility.
+      Contatta il centro per rinnovarlo e continuare a prenotare.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+      <a href="mailto:asdiamocilazampa@libero.it" class="btn-secondary" style="display:inline-flex;">
+        ✉️ Contattaci
+      </a>
+      <a href="https://wa.me/393333285654" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex;">
+        💬 WhatsApp
+      </a>
+    </div>
+  </div>
+
+  {% else %}
+
+  {# ── Errore ───────────────────────────────────────────── #}
+  {% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  {# ── Badge pacchetto ─────────────────────────────────── #}
+  {% if package %}
+  {% set pct = ((package.lessons_completed / package.total_lessons) * 100) | int %}
+  <div style="background:var(--color-cream);border:1.5px solid var(--color-cipria);border-radius:12px;padding:0.85rem 1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;">
+    <div style="flex:1;">
+      <div style="height:5px;background:#e0e0e0;border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:{{ pct }}%;background:var(--color-primary);border-radius:99px;"></div>
+      </div>
+    </div>
+    <span style="font-size:13px;font-weight:600;color:var(--color-primary);white-space:nowrap;">
+      {{ package.lessons_completed }}/{{ package.total_lessons }} lezioni
+    </span>
+  </div>
+  {% endif %}
+
+  {% if has_availability %}
+
+  {# ── Lista slot per giorno ────────────────────────────── #}
+  {% set grouped = {} %}
+  {% for slot in slots %}
+    {% set d = slot.date.isoformat() %}
+    {% if d not in grouped %}{% set _ = grouped.update({d: []}) %}{% endif %}
+    {% set _ = grouped[d].append(slot) %}
+  {% endfor %}
+
+  {% if grouped %}
+  {% for day_iso, day_slots in grouped.items() %}
+  {% set day_date = day_slots[0].date %}
+  <div style="margin-bottom:1.5rem;">
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-muted);margin-bottom:0.6rem;">
+      {{ day_date | it_date('%A %d %B') }}
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% for slot in day_slots %}
+      <form method="POST" action="/agility/prenota" style="display:contents;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="group_id" value="{{ group.id }}">
+        <input type="hidden" name="date" value="{{ slot.date.isoformat() }}">
+        <input type="hidden" name="start_time" value="{{ slot.start.strftime('%H:%M') }}">
+        <input type="hidden" name="end_time" value="{{ slot.end.strftime('%H:%M') }}">
+        <button type="submit"
+                style="position:relative;padding:10px 16px;border-radius:10px;border:1.5px solid {% if slot.is_suggested %}#4CAF50{% else %}var(--color-cipria){% endif %};background:{% if slot.is_suggested %}#F1FBF1{% else %}var(--color-white){% endif %};cursor:pointer;font-size:14px;font-weight:500;color:var(--color-choco);touch-action:manipulation;min-width:80px;">
+          {{ slot.start.strftime('%H:%M') }}
+          {% if slot.is_suggested %}
+          <span style="display:block;font-size:10px;color:#388E3C;font-weight:600;margin-top:1px;">✦ Consigliato</span>
+          {% elif slot.available_count == 1 %}
+          <span style="display:block;font-size:10px;color:var(--color-warning);font-weight:600;margin-top:1px;">Ultimo posto</span>
+          {% endif %}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card" style="padding:2.5rem;text-align:center;">
+    <p style="color:var(--color-muted);font-size:14px;margin:0;">
+      Nessuno slot disponibile nelle prossime settimane. Torna presto!
+    </p>
+  </div>
+  {% endif %}
+
+  {% else %}
+
+  <div class="card" style="padding:3rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">📅</div>
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;color:var(--color-choco);margin-bottom:0.5rem;">
+      Nessuno slot disponibile
+    </h2>
+    <p style="color:var(--color-muted);font-size:14px;margin:0 0 1.5rem;">
+      Non ci sono slot Agility disponibili nelle prossime 2 settimane. Prova a tornare più tardi o contattaci.
+    </p>
+    <a href="mailto:asdiamocilazampa@libero.it" class="btn-secondary" style="display:inline-flex;">
+      ✉️ Contattaci
+    </a>
+  </div>
+
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}
